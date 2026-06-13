@@ -1,5 +1,7 @@
 # SoccerMind ⚽🧠
 
+[![CI](https://github.com/inchoel/SoccerMind/actions/workflows/ci.yml/badge.svg)](https://github.com/inchoel/SoccerMind/actions/workflows/ci.yml)
+
 두 국가명을 입력받아 **승리 국가 · 예상 스코어 · 예상 득점자**를 예측하는, 실시간 데이터 기반 오픈소스 분석 도구.
 
 > 재미용 룰렛이 아니라 **실제 공개 데이터 + 검증된 통계 모델 + LLM 보강**으로 재현 가능하고 설명 가능한 예측을 제공합니다.
