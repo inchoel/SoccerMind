@@ -46,3 +46,23 @@ def win_expectancy(rating_a: float, rating_b: float, h: float = 0.0) -> float:
     """Elo 표준 기대 결과(0~1). 레이팅 업데이트/참고용이며 승무패 산출에는 쓰지 않는다."""
     dr = rating_a - rating_b + h
     return 1.0 / (10 ** (-dr / 400.0) + 1.0)
+
+
+def goal_diff_multiplier(goal_diff: int) -> float:
+    """득점차 가중 G (World Football Elo): 1골=1.0, 2골=1.5, 3골+=(11+|gd|)/8."""
+    gd = abs(goal_diff)
+    if gd <= 1:
+        return 1.0
+    if gd == 2:
+        return 1.5
+    return (11 + gd) / 8.0
+
+
+def update_rating(
+    rating: float, score: float, expected: float, k: float, gd_mult: float = 1.0
+) -> float:
+    """Elo 업데이트: R_new = R_old + K·G·(W − W_e).
+
+    score(W): 승=1, 무=0.5, 패=0. expected(W_e): win_expectancy 값. k: 대회 가중치.
+    """
+    return rating + k * gd_mult * (score - expected)
