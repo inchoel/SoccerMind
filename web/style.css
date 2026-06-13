@@ -95,6 +95,9 @@ textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
 .form-chip.f-D { background: #2c2f17; color: #e6d36e; }
 .form-chip.f-L { background: #3a1717; color: #f0a0a0; }
 
+.injuries { margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.inj-row { font-size: 0.85rem; color: #f0c0a0; background: #2a1f17; border-left: 3px solid var(--accent-2); border-radius: 6px; padding: 0.5rem 0.7rem; line-height: 1.5; }
+
 .explanation { margin-top: 1.25rem; padding: 1rem; background: #11281f; border-left: 3px solid var(--accent); border-radius: 6px; line-height: 1.6; }
 .meta { margin-top: 1rem; color: var(--muted); font-size: 0.78rem; }
 .meta .warn { color: var(--accent-2); }

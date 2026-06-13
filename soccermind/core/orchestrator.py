@@ -143,6 +143,8 @@ class PredictionService:
                                  "b": td_b.context.get("sources_used", [])},
                 "form": {"a": td_a.context.get("form", []),
                          "b": td_b.context.get("form", [])},
+                "injuries": {"a": td_a.context.get("injuries", []),
+                             "b": td_b.context.get("injuries", [])},
                 "warnings": warn_a + warn_b,
             },
         )

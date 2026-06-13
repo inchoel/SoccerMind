@@ -73,6 +73,12 @@ function renderMatch(d) {
          <div class="form-row"><span class="form-team">${esc(b)}</span>${formChips(form.b) || '<span class="pct">최근 전적 없음</span>'}</div>
        </div>` : "";
 
+  const inj = d.meta.injuries || { a: [], b: [] };
+  const injLine = (team, arr) =>
+    arr.length ? `<div class="inj-row">🩹 <strong>${esc(team)}</strong>: ${arr.map(esc).join(" · ")}</div>` : "";
+  const injHtml = (inj.a.length || inj.b.length)
+    ? `<div class="injuries">${injLine(a, inj.a)}${injLine(b, inj.b)}</div>` : "";
+
   resultEl.innerHTML = `
     <div class="winner-line">${winnerLine}</div>
     <div class="scoreline"><span class="pa">${d.scoreline.a}</span> : <span class="pb">${d.scoreline.b}</span></div>
@@ -88,6 +94,7 @@ function renderMatch(d) {
       <div class="col b"><h3>${esc(b)} 득점 후보</h3><ul>${scorerList(d.scorers.b)}</ul></div>
     </div>
     ${formHtml}
+    ${injHtml}
     <div class="explanation">${esc(d.explanation)}</div>
     <div class="meta">엔진: ${esc(d.meta.augmenter || "-")} · λ ${d.meta.lambda ? `${d.meta.lambda.a} / ${d.meta.lambda.b}` : "-"}${warnHtml}</div>
   `;
