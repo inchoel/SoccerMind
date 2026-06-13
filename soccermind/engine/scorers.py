@@ -29,8 +29,11 @@ def rank_scorers(
     top_n: int = 6,
     cfg: ModelConfig = DEFAULT_CONFIG,
 ) -> list[ScorerProb]:
-    """팀의 기대 XI 에 대해 득점 확률 내림차순 상위 N명 반환."""
-    available = [p for p in squad if p.availability > 0.0]
+    """팀의 기대 XI 에 대해 득점 확률 내림차순 상위 N명 반환.
+
+    골키퍼와 결장 선수(availability=0)는 득점자 풀에서 제외.
+    """
+    available = [p for p in squad if p.availability > 0.0 and not p.is_goalkeeper]
     if not available:
         return []
 

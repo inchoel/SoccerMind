@@ -41,3 +41,23 @@ def test_penalty_taker_gets_boost():
 
 def test_empty_squad_returns_empty():
     assert rank_scorers(1.5, []) == []
+
+
+def test_goalkeeper_excluded():
+    squad = _squad() + [
+        PlayerStat("Keeper", intl_goals=0, matches=80, position="Goalkeeper")
+    ]
+    names = [s.name for s in rank_scorers(1.8, squad)]
+    assert "Keeper" not in names
+
+
+def test_equal_share_fallback_when_no_goal_stats():
+    # 득점 통계가 모두 0이면(무료 티어) 균등 분배로 폴백, 골키퍼는 제외.
+    squad = [
+        PlayerStat("A", position="Offence"),
+        PlayerStat("B", position="Midfield"),
+        PlayerStat("GK", position="Goalkeeper"),
+    ]
+    ranked = rank_scorers(2.0, squad)
+    assert {s.name for s in ranked} == {"A", "B"}
+    assert abs(ranked[0].xg - ranked[1].xg) < 1e-9  # 균등

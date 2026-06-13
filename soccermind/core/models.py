@@ -36,6 +36,22 @@ class PlayerStat:
     recent_matches: int = 0  # 최근 윈도우 출전
     is_pen_taker: bool = False  # 지정 페널티 키커 여부
     availability: float = 1.0  # 출전 가능도 [0,1]: 1=확실한 선발, 0=결장
+    position: str = ""  # 포지션 (예: "Goalkeeper", "Offence") — 골키퍼 득점자 제외용
+
+    @property
+    def is_goalkeeper(self) -> bool:
+        return self.position.lower().startswith("goal")
+
+
+@dataclass
+class PartialTeamData:
+    """한 Provider 가 반환하는 부분 데이터. 오케스트레이터가 병합한다."""
+
+    source: str
+    elo: float | None = None
+    squad: list[PlayerStat] = field(default_factory=list)
+    is_host: bool = False
+    context: dict = field(default_factory=dict)
 
 
 @dataclass
