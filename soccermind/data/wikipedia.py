@@ -17,8 +17,9 @@ from .cache import DiskCache
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 _TTL = 24 * 3600
 
-_PLAYER_RE = re.compile(r"\{\{\s*nat fs player(.*?)\}\}", re.IGNORECASE | re.DOTALL)
 _POS_MAP = {"GK": "Goalkeeper", "DF": "Defence", "MF": "Midfield", "FW": "Offence"}
+# 스쿼드 선수 템플릿 변형: {{nat fs player}}, {{nat fs g player}}(포지션 그룹형)
+_PLAYER_TEMPLATES = ("nat fs g player", "nat fs player")
 _SCORE_RE = re.compile(r"(\d+)\s*[–—-]\s*(\d+)")
 _TITLE_SUFFIXES = (
     " national football team",
@@ -44,9 +45,16 @@ def _clean_name(raw: str) -> str:
 
 
 def parse_squad_from_wikitext(text: str) -> list[PlayerStat]:
-    """위키텍스트 → PlayerStat 목록. goals/caps 있으면 득점 가중에 활용."""
+    """위키텍스트 → PlayerStat 목록. goals/caps 있으면 득점 가중에 활용.
+
+    {{nat fs player}}·{{nat fs g player}} 모두 지원. 중첩 템플릿(예: {{birth date and age}})
+    때문에 중괄호 균형 추출기(_find_templates)를 사용 — 단순 정규식은 중첩 }} 에서 잘린다.
+    """
     out: list[PlayerStat] = []
-    for block in _PLAYER_RE.findall(text):
+    blocks: list[str] = []
+    for tmpl in _PLAYER_TEMPLATES:
+        blocks.extend(_find_templates(text, tmpl))
+    for block in blocks:
         name = _clean_name(_param(block, "name"))
         if not name:
             continue

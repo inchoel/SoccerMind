@@ -41,6 +41,28 @@ def test_parse_empty():
     assert parse_squad_from_wikitext("본문에 선수 템플릿 없음") == []
 
 
+# 실제 문서가 쓰는 형식: {{nat fs g player}} + 내부 중첩 템플릿({{birth date and age}})
+NAT_FS_G_WIKITEXT = """
+{{nat fs start}}
+{{nat fs g player|pos=GK|no=1|name=[[Kim Seung-gyu]]|age={{birth date and age|1990|9|30|df=y}}|caps=88|goals=0|club=...}}
+{{nat fs g player|pos=FW|no=7|name=[[Son Heung-min]]|age={{birth date and age|1992|7|8|df=y}}|caps=130|goals=48|club=...}}
+{{nat fs g player|pos=MF|no=10|name=[[Lee Kang-in|Lee]]|age={{birth date and age|2001|2|19|df=y}}|caps=30|goals=5|club=...}}
+{{nat fs end}}
+"""
+
+
+def test_parse_nat_fs_g_player_with_nested_templates():
+    # 중첩 {{birth date and age}} 때문에 단순 정규식은 잘렸던 회귀 케이스
+    squad = parse_squad_from_wikitext(NAT_FS_G_WIKITEXT)
+    assert len(squad) == 3
+    son = next(p for p in squad if p.name == "Son Heung-min")
+    assert son.intl_goals == 48 and son.matches == 130
+    assert son.position == "Offence"
+    gk = next(p for p in squad if p.name == "Kim Seung-gyu")
+    assert gk.is_goalkeeper is True
+    assert any(p.name == "Lee" for p in squad)  # [[A|B]] → B
+
+
 def test_provider_always_available():
     assert WikipediaProvider().available() is True
 
