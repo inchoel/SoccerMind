@@ -39,8 +39,12 @@ uvicorn soccermind.api.app:app --reload                # → http://127.0.0.1:80
 pytest -q                                              # 테스트 (현재 73 passed)
 ```
 
-브라우저에서 두 국가명을 입력하면 승리국·스코어·득점자·해설을 확인할 수 있습니다.
-API: `GET /api/predict?team_a=대한민국&team_b=브라질`
+브라우저에서 **경기 예측**(두 국가 → 승리국·스코어·득점자·해설)과 **토너먼트 우승**(참가국 → 우승확률 랭킹) 두 탭을 사용할 수 있습니다.
+
+```
+GET /api/predict?team_a=대한민국&team_b=브라질
+GET /api/tournament?teams=브라질,아르헨티나,프랑스,스페인   # 2의 거듭제곱
+```
 
 ## 문서
 

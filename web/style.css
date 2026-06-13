@@ -30,6 +30,21 @@ h1 { font-size: 2.4rem; margin: 0; letter-spacing: -1px; }
 .emoji { font-size: 1.8rem; }
 .subtitle { color: var(--muted); margin-top: 0.5rem; }
 
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.tab {
+  flex: 1; padding: 0.7rem; font-size: 0.98rem; font-weight: 600; cursor: pointer;
+  border: 1px solid #2c3950; border-radius: 10px; background: #131c29; color: var(--muted);
+}
+.tab.active { background: var(--card); color: var(--accent); border-color: var(--accent); }
+
+.field-label { display: block; color: var(--muted); font-size: 0.88rem; margin-bottom: 0.5rem; }
+textarea {
+  width: 100%; padding: 0.9rem 1rem; font-size: 1rem; border-radius: 10px; resize: vertical;
+  border: 1px solid #2c3950; background: #0f1622; color: var(--text);
+  font-family: inherit; line-height: 1.5;
+}
+textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
 .form { background: var(--card); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
 .team-inputs { display: flex; align-items: center; gap: 0.75rem; }
 .team-inputs input {
@@ -75,6 +90,15 @@ h1 { font-size: 2.4rem; margin: 0; letter-spacing: -1px; }
 .explanation { margin-top: 1.25rem; padding: 1rem; background: #11281f; border-left: 3px solid var(--accent); border-radius: 6px; line-height: 1.6; }
 .meta { margin-top: 1rem; color: var(--muted); font-size: 0.78rem; }
 .meta .warn { color: var(--accent-2); }
+
+.champ-title { margin: 0 0 1rem; text-align: center; }
+.champ-list { list-style: none; margin: 0; padding: 0; }
+.champ-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0; }
+.champ-rank { width: 1.8rem; text-align: center; font-weight: 700; }
+.champ-name { width: 7rem; flex-shrink: 0; font-weight: 600; }
+.champ-bar { flex: 1; height: 18px; background: #0f1622; border-radius: 6px; overflow: hidden; }
+.champ-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.champ-pct { width: 3.5rem; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 footer { text-align: center; margin-top: 2.5rem; color: var(--muted); font-size: 0.85rem; }
 footer a { color: var(--accent); }
