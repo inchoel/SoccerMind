@@ -162,7 +162,11 @@ def _default_fetch_wikitext(title: str) -> str:
         "formatversion": "2",
         "redirects": "1",
     }
-    headers = {"User-Agent": "SoccerMind/0.1 (open-source predictor; contact via GitHub)"}
+    # Wikimedia UA 정책: 연락처 URL 필수 (없으면 403). GitHub 레포 URL 로 식별.
+    headers = {
+        "User-Agent": "SoccerMind/0.1 (https://github.com/inchoel/SoccerMind)",
+        "Accept": "application/json",
+    }
     resp = httpx.get(WIKI_API, params=params, headers=headers, timeout=15.0)
     resp.raise_for_status()
     return resp.json().get("parse", {}).get("wikitext", "")
