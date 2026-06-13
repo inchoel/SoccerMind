@@ -109,6 +109,25 @@ def test_host_advantage_changes_lambda():
     assert hosted.a_win > neutral.a_win
 
 
+def test_tournament_championship_probs():
+    elo = FakeEloProvider({"Brazil": 2024.0, "Korea South": 1745.0,
+                           "Japan": 1750.0, "Argentina": 2115.0})
+    svc = PredictionService(providers=[elo])
+    res = svc.tournament(["브라질", "대한민국", "일본", "아르헨티나"])
+    names = [n for n, _ in res]
+    assert set(names) == {"브라질", "대한민국", "일본", "아르헨티나"}
+    assert abs(sum(p for _, p in res) - 1.0) < 1e-9
+    # 최강(아르헨티나)이 우승확률 1위
+    assert res[0][0] == "아르헨티나"
+
+
+def test_tournament_invalid_count_raises():
+    elo = FakeEloProvider({"Brazil": 2024.0, "Korea South": 1745.0})
+    svc = PredictionService(providers=[elo])
+    with pytest.raises(ValueError):
+        svc.tournament(["브라질", "대한민국", "일본"])  # 3팀 (2의 거듭제곱 아님)
+
+
 def test_unavailable_provider_skipped():
     class Down(DataProvider):
         name = "down"

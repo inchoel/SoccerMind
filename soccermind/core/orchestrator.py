@@ -18,6 +18,7 @@ from ..engine.score_matrix import (
     top_scorelines,
 )
 from ..engine.scorers import rank_scorers
+from ..engine.tournament import TournamentTeam, championship_probabilities
 from ..llm.base import AugmentInput, Augmenter
 from ..llm.fallback import FallbackAugmenter
 from .models import (
@@ -143,3 +144,15 @@ class PredictionService:
                 "warnings": warn_a + warn_b,
             },
         )
+
+    def tournament(self, raw_names: list[str]) -> list[tuple[str, float]]:
+        """녹아웃 토너먼트(2의 거듭제곱 팀, 시드 순) 우승 확률.
+
+        각 팀을 독립 조회해 Elo 를 모으고 정확한 브래킷 DP 로 산출.
+        """
+        teams = []
+        for raw in raw_names:
+            t = self._resolve(raw)
+            td, _ = self.gather(t)
+            teams.append(TournamentTeam(name=t.display, rating=td.elo))
+        return championship_probabilities(teams, self.cfg)

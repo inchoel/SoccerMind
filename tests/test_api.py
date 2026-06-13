@@ -95,3 +95,25 @@ def test_predict_korean_aliases(client):
     r = client.get("/api/predict", params={"team_a": "한국", "team_b": "brazil"})
     assert r.status_code == 200
     assert r.json()["teams"]["a"]["key"] == "KOR"
+
+
+def test_tournament_endpoint(client):
+    r = client.get("/api/tournament", params={"teams": "브라질,대한민국,일본,아르헨티나"})
+    assert r.status_code == 200
+    res = r.json()
+    assert len(res) == 4
+    assert abs(sum(x["prob"] for x in res) - 1.0) < 1e-3  # 4자리 반올림 오차 허용
+    # 내림차순 정렬
+    probs = [x["prob"] for x in res]
+    assert probs == sorted(probs, reverse=True)
+
+
+def test_tournament_invalid_count_returns_400(client):
+    r = client.get("/api/tournament", params={"teams": "브라질,대한민국,일본"})
+    assert r.status_code == 400
+
+
+def test_tournament_unknown_team_returns_400(client):
+    r = client.get("/api/tournament", params={"teams": "Atlantis,대한민국,일본,브라질"})
+    assert r.status_code == 400
+    assert r.json()["detail"]["query"] == "Atlantis"

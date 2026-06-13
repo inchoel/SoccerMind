@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..core.orchestrator import PredictOptions, PredictionService, ResolutionError
 from .deps import get_service
-from .schemas import PredictionResponse, TeamListItem, to_response
+from .schemas import ChampionOut, PredictionResponse, TeamListItem, to_response
 
 router = APIRouter()
 
@@ -44,3 +44,22 @@ def predict(
             },
         ) from e
     return to_response(pred)
+
+
+@router.get("/api/tournament", response_model=list[ChampionOut])
+def tournament(
+    teams: str = Query(..., description="쉼표로 구분한 국가명(2의 거듭제곱), 시드 순"),
+    svc: PredictionService = Depends(get_service),
+) -> list[ChampionOut]:
+    names = [t.strip() for t in teams.split(",") if t.strip()]
+    try:
+        result = svc.tournament(names)
+    except ResolutionError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={"detail": str(e), "query": e.query,
+                    "candidates": [{"key": c.key, "name": c.display} for c in e.candidates]},
+        ) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail={"detail": str(e)}) from e
+    return [ChampionOut(name=n, prob=round(p, 4)) for n, p in result]

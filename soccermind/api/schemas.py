@@ -88,3 +88,8 @@ class CandidateError(BaseModel):
     detail: str
     query: str
     candidates: list[TeamListItem]
+
+
+class ChampionOut(BaseModel):
+    name: str
+    prob: float
