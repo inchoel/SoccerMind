@@ -29,6 +29,19 @@ Elo 레이팅 ──► 기대득점(λ) ──► 스코어 매트릭스(Dixon-
 
 football-data.org 키 1개만으로 동작하며, 키가 없어도 통계 예측 + 템플릿 해설로 우아하게 동작합니다.
 
+## 빠른 시작
+
+```bash
+python -m venv .venv && .venv\Scripts\activate        # Windows (macOS/Linux: source .venv/bin/activate)
+pip install -e ".[dev]"                                # LLM 포함: ".[dev,llm]"
+cp .env.example .env                                   # 본인 키 입력 (없어도 통계 예측은 동작)
+uvicorn soccermind.api.app:app --reload                # → http://127.0.0.1:8000
+pytest -q                                              # 테스트 (현재 73 passed)
+```
+
+브라우저에서 두 국가명을 입력하면 승리국·스코어·득점자·해설을 확인할 수 있습니다.
+API: `GET /api/predict?team_a=대한민국&team_b=브라질`
+
 ## 문서
 
 - [기획서 (PRD)](./docs/기획서.md)
@@ -36,7 +49,9 @@ football-data.org 키 1개만으로 동작하며, 키가 없어도 통계 예측
 
 ## 상태
 
-🚧 기획·설계 완료, MVP 구현 착수 전. (Python 3.11+ / FastAPI 예정)
+✅ **MVP 구현 완료** — 통계 엔진(Elo→스코어매트릭스) + 국가명 정규화 + 데이터 레이어(Elo/football-data + 캐시) + 오케스트레이터 + LLM augmenter(가드레일) + FastAPI/웹 UI. Python 3.11+.
+
+향후: 모델 보정(과거 경기 피팅)·백테스트, API-Football 통합, 토너먼트 시뮬레이션.
 
 ## 라이선스
 

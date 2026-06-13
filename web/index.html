@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SoccerMind ⚽🧠 — 월드컵 경기 예측</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>SoccerMind <span class="emoji">⚽🧠</span></h1>
+      <p class="subtitle">두 국가명을 입력하면 승리국 · 예상 스코어 · 득점자를 예측합니다.</p>
+    </header>
+
+    <form id="predict-form" class="form">
+      <div class="team-inputs">
+        <input id="team-a" list="teams" placeholder="예: 대한민국" autocomplete="off" required />
+        <span class="vs">VS</span>
+        <input id="team-b" list="teams" placeholder="예: 브라질" autocomplete="off" required />
+      </div>
+      <datalist id="teams"></datalist>
+      <button type="submit" id="submit-btn">예측하기</button>
+    </form>
+
+    <div id="status" class="status" hidden></div>
+    <section id="result" class="result" hidden></section>
+
+    <footer>
+      <a href="https://github.com/inchoel/SoccerMind" target="_blank" rel="noopener">GitHub</a>
+      · 통계모델(Elo→스코어매트릭스) + LLM 하이브리드
+    </footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
