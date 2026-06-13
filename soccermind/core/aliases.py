@@ -24,9 +24,11 @@ class TeamAlias:
 
 # 월드컵 단골 진출국 (확장 가능). 별칭은 소문자 비교되므로 대소문자 무관.
 TEAMS: tuple[TeamAlias, ...] = (
+    # 주의: fd_id/api_football_id 는 검증된 값만 채울 것. 잘못된 ID 는 다른 팀 스쿼드를
+    # 가져오는 심각한 버그를 유발한다(예: football-data id 770 = England ≠ Korea).
+    # 미검증이면 None 으로 두면 Wikipedia(문서 제목 기반)가 올바른 스쿼드를 제공한다.
     TeamAlias("KOR", "대한민국", ("한국", "남한", "korea", "south korea", "korea republic",
-              "republic of korea"), "Korea South", "South Korea national football team",
-              fd_id=770, api_football_id=17),
+              "republic of korea"), "Korea South", "South Korea national football team"),
     TeamAlias("PRK", "북한", ("조선", "north korea", "dpr korea", "korea dpr"),
               "Korea North", "North Korea national football team"),
     TeamAlias("JPN", "일본", ("japan",), "Japan", "Japan national football team"),

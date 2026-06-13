@@ -48,6 +48,10 @@ def test_provider_unavailable_without_key():
 
 
 def test_provider_fetch_with_injected_json(tmp_path):
+    # api_football_id 는 aliases 에 검증된 값만 들어가므로 테스트는 명시적 팀 사용
+    team = ResolvedTeam(key="KOR", display="대한민국", elo_name="Korea South",
+                        api_football_id=17)
+
     def fake_json(url, key):
         assert "team=17" in url and "season=2026" in url
         assert key == "K"
@@ -55,7 +59,7 @@ def test_provider_fetch_with_injected_json(tmp_path):
 
     p = ApiFootballProvider(key="K", fetch_json=fake_json, cache=DiskCache(tmp_path))
     assert p.available() is True
-    partial = p.fetch(R.resolve("대한민국"))  # KOR api_football_id=17
+    partial = p.fetch(team)
     assert partial.source == "api_football"
     assert len(partial.squad) == 3
 
@@ -81,7 +85,15 @@ def test_scorer_ranking_uses_goal_stats(tmp_path):
 
     apif = ApiFootballProvider(key="K", fetch_json=lambda u, k: PLAYERS_JSON,
                                cache=DiskCache(tmp_path))
-    svc = PredictionService(providers=[FakeElo(), apif])
+    # 검증된 api_football_id 가 KOR 에 있다고 가정한 커스텀 resolver
+    from dataclasses import replace
+
+    from soccermind.core.aliases import TEAMS
+    from soccermind.core.name_resolver import NameResolver
+    resolver = NameResolver(
+        tuple(replace(t, api_football_id=17) if t.key == "KOR" else t for t in TEAMS)
+    )
+    svc = PredictionService(providers=[FakeElo(), apif], resolver=resolver)
     pred = svc.predict("대한민국", "일본")  # team_a=KOR 이 API-Football 스쿼드 보유
     names = [s.name for s in pred.scorers_a]
     assert names[0] == "Son Heung-min"  # 최다 득점자 1위

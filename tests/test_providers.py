@@ -1,5 +1,6 @@
 """데이터 Provider 검증 — 파싱 순수성 + fetch 주입 (네트워크 없음)."""
 
+from soccermind.core.models import ResolvedTeam
 from soccermind.core.name_resolver import NameResolver
 from soccermind.data.cache import DiskCache
 from soccermind.data.elo_provider import EloProvider, parse_elo_tsv
@@ -95,6 +96,9 @@ def test_football_data_unavailable_without_token():
 
 
 def test_football_data_fetch_with_injected_json(tmp_path):
+    # fd_id 는 aliases 에 검증된 값만 들어가므로, 테스트는 명시적 ResolvedTeam 사용
+    team = ResolvedTeam(key="KOR", display="대한민국", fd_id=770)
+
     def fake_json(url, token):
         assert "770" in url
         assert token == "TESTKEY"
@@ -104,7 +108,7 @@ def test_football_data_fetch_with_injected_json(tmp_path):
         token="TESTKEY", fetch_json=fake_json, cache=DiskCache(tmp_path)
     )
     assert prov.available() is True
-    partial = prov.fetch(R.resolve("대한민국"))
+    partial = prov.fetch(team)
     assert partial.source == "football_data"
     assert len(partial.squad) == 4
 
