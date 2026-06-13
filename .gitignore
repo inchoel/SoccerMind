@@ -1,0 +1,26 @@
+# Secrets — never commit keys
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime cache (TTL disk cache)
+data_cache/
+
+# Claude Code local config
+.claude/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
