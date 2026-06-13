@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ..core.orchestrator import PredictionService
+from ..data.api_football import ApiFootballProvider
 from ..data.cache import DiskCache
 from ..data.elo_provider import EloProvider
 from ..data.football_data import FootballDataProvider
@@ -27,8 +28,10 @@ def build_service(cache: DiskCache | None = None) -> PredictionService:
     load_dotenv_if_present()
     cache = cache or DiskCache()
     providers = [
-        EloProvider(cache=cache),  # 키 불필요
-        FootballDataProvider(cache=cache),  # FOOTBALL_DATA_TOKEN 있으면 활성
+        EloProvider(cache=cache),  # 키 불필요 (Elo)
+        # API-Football 을 football-data 보다 먼저 → 득점 통계 있는 스쿼드가 병합 우선
+        ApiFootballProvider(cache=cache),  # API_FOOTBALL_KEY 있으면 활성 (선수 득점 통계)
+        FootballDataProvider(cache=cache),  # FOOTBALL_DATA_TOKEN 있으면 활성 (스쿼드 폴백)
     ]
     augmenter = ClaudeAugmenter()  # ANTHROPIC_API_KEY 있으면 활성
     return PredictionService(providers=providers, augmenter=augmenter)
