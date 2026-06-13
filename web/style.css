@@ -87,6 +87,14 @@ textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
 .scorers li { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.92rem; }
 .scorers li .pct { color: var(--muted); }
 
+.forms { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.form-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.form-team { width: 7rem; flex-shrink: 0; font-weight: 600; font-size: 0.9rem; }
+.form-chip { font-size: 0.74rem; padding: 0.12rem 0.45rem; border-radius: 5px; background: #0f1622; color: var(--muted); }
+.form-chip.f-W { background: #14361f; color: #6ee7a8; }
+.form-chip.f-D { background: #2c2f17; color: #e6d36e; }
+.form-chip.f-L { background: #3a1717; color: #f0a0a0; }
+
 .explanation { margin-top: 1.25rem; padding: 1rem; background: #11281f; border-left: 3px solid var(--accent); border-radius: 6px; line-height: 1.6; }
 .meta { margin-top: 1rem; color: var(--muted); font-size: 0.78rem; }
 .meta .warn { color: var(--accent-2); }

@@ -5,7 +5,12 @@ from soccermind.core.name_resolver import NameResolver
 from soccermind.core.orchestrator import PredictionService
 from soccermind.data.base import DataProvider
 from soccermind.data.cache import DiskCache
-from soccermind.data.wikipedia import WikipediaProvider, parse_squad_from_wikitext
+from soccermind.data.wikipedia import (
+    WikipediaProvider,
+    parse_recent_form,
+    parse_squad_from_wikitext,
+    team_token,
+)
 
 R = NameResolver()
 
@@ -62,6 +67,78 @@ def test_provider_fetch_with_injection(tmp_path):
     # 캐시 적중 — 재호출 시 네트워크 미사용
     p.fetch(R.resolve("대한민국"))
     assert calls["n"] == 1
+
+
+FORM_WIKITEXT = """
+== Results and fixtures ==
+{{Football box collapsible
+|date=5 June 2026
+|team1={{flagicon|KOR}} South Korea
+|score=2–1
+|team2=Japan {{flagicon|JPN}}
+|goals1={{goal|23}} Son
+|goals2={{goal|70}} Mitoma
+}}
+{{Football box collapsible
+|date=9 June 2026
+|team1=Brazil
+|score=0–0
+|team2=South Korea
+}}
+{{Football box collapsible
+|date=12 June 2026
+|team1=South Korea
+|score=1–3
+|team2=Spain
+}}
+"""
+
+
+def test_team_token():
+    assert team_token("South Korea national football team") == "South Korea"
+    assert team_token("United States men's national soccer team") == "United States"
+
+
+def test_parse_recent_form_orders_recent_first():
+    form = parse_recent_form(FORM_WIKITEXT, "South Korea")
+    assert len(form) == 3
+    # 문서 마지막(최신)이 맨 앞
+    assert form[0] == "L 1-3 vs Spain"
+    assert form[1] == "D 0-0 vs Brazil"
+    assert form[2] == "W 2-1 vs Japan"  # 상대 플래그아이콘 제거됨
+
+
+def test_parse_recent_form_respects_limit():
+    form = parse_recent_form(FORM_WIKITEXT, "South Korea", limit=2)
+    assert form == ["L 1-3 vs Spain", "D 0-0 vs Brazil"]
+
+
+def test_parse_recent_form_none_for_unknown_team():
+    assert parse_recent_form(FORM_WIKITEXT, "Argentina") == []
+
+
+def test_provider_populates_form_context(tmp_path):
+    p = WikipediaProvider(fetch_wikitext=lambda t: FORM_WIKITEXT, cache=DiskCache(tmp_path))
+    partial = p.fetch(R.resolve("대한민국"))
+    assert partial.context.get("form")
+    assert partial.context["form"][0] == "L 1-3 vs Spain"
+
+
+def test_form_surfaced_in_prediction_meta(tmp_path):
+    class FakeElo(DataProvider):
+        name = "elo"
+
+        def available(self):
+            return True
+
+        def fetch(self, team: ResolvedTeam):
+            return PartialTeamData(source="elo", elo={"Korea South": 1745.0,
+                                                      "Japan": 1750.0}.get(team.elo_name))
+
+    wiki = WikipediaProvider(fetch_wikitext=lambda t: FORM_WIKITEXT, cache=DiskCache(tmp_path))
+    svc = PredictionService(providers=[FakeElo(), wiki])
+    pred = svc.predict("대한민국", "일본")
+    assert pred.meta["form"]["a"][0] == "L 1-3 vs Spain"
 
 
 def test_covers_team_without_source_ids(tmp_path):

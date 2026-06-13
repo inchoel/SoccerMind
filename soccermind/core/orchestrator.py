@@ -126,7 +126,7 @@ class PredictionService:
                 outcome=outcome, scoreline=(x, y, sp), top_scorelines=tops,
                 scorers_a=scorers_a, scorers_b=scorers_b,
                 squad_a=td_a.squad, squad_b=td_b.squad,
-                context={**td_a.context, **td_b.context},
+                context={"a": td_a.context, "b": td_b.context},
             )
         )
 
@@ -141,6 +141,8 @@ class PredictionService:
                 "lambda": {"a": round(lam_a, 3), "b": round(lam_b, 3)},
                 "sources_used": {"a": td_a.context.get("sources_used", []),
                                  "b": td_b.context.get("sources_used", [])},
+                "form": {"a": td_a.context.get("form", []),
+                         "b": td_b.context.get("form", [])},
                 "warnings": warn_a + warn_b,
             },
         )
