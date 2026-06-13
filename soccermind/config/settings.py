@@ -7,6 +7,7 @@ from ..data.api_football import ApiFootballProvider
 from ..data.cache import DiskCache
 from ..data.elo_provider import EloProvider
 from ..data.football_data import FootballDataProvider
+from ..engine.config import CONFIG_PATH, load_config
 from ..llm.augmenter import ClaudeAugmenter
 
 
@@ -20,13 +21,17 @@ def load_dotenv_if_present() -> None:
         pass
 
 
-def build_service(cache: DiskCache | None = None) -> PredictionService:
-    """기본 provider/augmenter 로 PredictionService 구성.
+def build_service(
+    cache: DiskCache | None = None, config_path: str = CONFIG_PATH
+) -> PredictionService:
+    """기본 provider/augmenter + 보정된 상수로 PredictionService 구성.
 
     키가 없는 provider/augmenter 는 available()=False 로 자동 스킵된다.
+    보정 상수 파일(config_path)이 있으면 로드해 예측에 반영, 없으면 기본값.
     """
     load_dotenv_if_present()
     cache = cache or DiskCache()
+    cfg = load_config(config_path)  # 보정 결과 반영 (없으면 DEFAULT_CONFIG)
     providers = [
         EloProvider(cache=cache),  # 키 불필요 (Elo)
         # API-Football 을 football-data 보다 먼저 → 득점 통계 있는 스쿼드가 병합 우선
@@ -34,4 +39,4 @@ def build_service(cache: DiskCache | None = None) -> PredictionService:
         FootballDataProvider(cache=cache),  # FOOTBALL_DATA_TOKEN 있으면 활성 (스쿼드 폴백)
     ]
     augmenter = ClaudeAugmenter()  # ANTHROPIC_API_KEY 있으면 활성
-    return PredictionService(providers=providers, augmenter=augmenter)
+    return PredictionService(providers=providers, augmenter=augmenter, cfg=cfg)

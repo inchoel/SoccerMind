@@ -16,6 +16,9 @@ venv/
 # Runtime cache (TTL disk cache)
 data_cache/
 
+# 사용자별 보정 결과 (각자 calibrate 로 생성)
+data_snapshots/model_config.json
+
 # Claude Code local config
 .claude/
 

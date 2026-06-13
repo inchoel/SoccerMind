@@ -6,8 +6,10 @@
 
 from __future__ import annotations
 
+import json
 import math
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, fields, replace
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -44,3 +46,31 @@ class ModelConfig:
 
 # 기본 설정 싱글턴
 DEFAULT_CONFIG = ModelConfig()
+
+# 보정된 상수 영속화 위치 (calibrate CLI 가 저장, build_service 가 로드)
+CONFIG_PATH = "data_snapshots/model_config.json"
+
+
+def save_config(cfg: ModelConfig, path: str | Path = CONFIG_PATH) -> None:
+    """ModelConfig 를 JSON 으로 저장 (보정 결과 영속화)."""
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(asdict(cfg), indent=2), encoding="utf-8")
+
+
+def load_config(path: str | Path = CONFIG_PATH, base: ModelConfig | None = None) -> ModelConfig:
+    """저장된 상수를 base(기본 DEFAULT_CONFIG) 위에 덮어 로드. 파일 없으면 base 반환.
+
+    알 수 없는 키는 무시, 일부 필드만 있어도 안전 (나머지는 base 유지).
+    """
+    base = base or DEFAULT_CONFIG
+    p = Path(path)
+    if not p.exists():
+        return base
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return base
+    valid = {f.name for f in fields(ModelConfig)}
+    overrides = {k: v for k, v in data.items() if k in valid}
+    return replace(base, **overrides)

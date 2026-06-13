@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .engine.calibration import BacktestReport, backtest, fit
-from .engine.config import DEFAULT_CONFIG, ModelConfig
+from .engine.config import CONFIG_PATH, DEFAULT_CONFIG, ModelConfig, save_config
 from .engine.rating_history import MatchResult, replay
 
 MIN_MATCHES = 30  # 보정에 필요한 최소 경기 수
@@ -64,6 +64,9 @@ def _main(argv: list[str]) -> int:
     print(f"보정 전  RPS={res.report_before.rps:.4f}  정확도={res.report_before.accuracy:.3f}")
     print(f"보정 후  RPS={res.report_after.rps:.4f}  정확도={res.report_after.accuracy:.3f}")
     print(f"피팅 상수: beta1={res.fitted.beta1}  rho={res.fitted.rho}")
+
+    save_config(res.fitted, CONFIG_PATH)
+    print(f"저장됨 → {CONFIG_PATH} (다음 기동부터 예측에 반영)")
     return 0
 
 
