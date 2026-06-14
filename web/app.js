@@ -107,6 +107,23 @@ function renderMatch(d) {
       }</div>`
     : "";
 
+  // 객관 전력 평가 (신뢰성 있는 레이팅 기관 — eloratings.net)
+  const elo0 = d.meta.elo || {};
+  const evalHtml = (elo0.a != null && elo0.b != null)
+    ? `<div class="eval-line">📊 전력 평가 <span class="dim">(eloratings.net)</span>: ${esc(a)} ${elo0.a} · ${esc(b)} ${elo0.b} — ${elo0.a >= elo0.b ? esc(a) : esc(b)} 우위</div>`
+    : "";
+
+  // 특이사항 · 리스크 · 관전 포인트 (데이터 기반 AI 분석)
+  const an = d.meta.analysis || { notable: [], risks: [], watch_points: [] };
+  const listSec = (title, icon, arr, cls) =>
+    arr && arr.length
+      ? `<div class="analysis-sec ${cls}"><h4>${icon} ${title}</h4><ul>${arr.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>`
+      : "";
+  const analysisHtml =
+    listSec("특이사항", "📌", an.notable, "a-notable") +
+    listSec("리스크", "⚠️", an.risks, "a-risk") +
+    listSec("관전 포인트", "👀", an.watch_points, "a-watch");
+
   const sourcesHtml = `
     <details class="sources" open>
       <summary>📊 참조 데이터</summary>
@@ -122,6 +139,7 @@ function renderMatch(d) {
   resultEl.innerHTML = `
     <div class="winner-line">${winnerLine}</div>
     ${recentHtml}
+    ${evalHtml}
     <div class="scoreline"><span class="pa">${d.scoreline.a}</span> : <span class="pb">${d.scoreline.b}</span></div>
     <div class="score-prob">${esc(a)} ${d.scoreline.a} - ${d.scoreline.b} ${esc(b)} · 예상 스코어 (이 스코어가 나올 확률 ${pct(d.scoreline.prob)})</div>
     <div class="wdl-bar">
@@ -137,6 +155,7 @@ function renderMatch(d) {
     ${formHtml}
     ${injHtml}
     <div class="explanation">${esc(d.explanation)}</div>
+    ${analysisHtml}
     ${sourcesHtml}
     ${warnHtml ? `<div class="meta">${warnHtml}</div>` : ""}
   `;

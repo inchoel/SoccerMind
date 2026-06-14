@@ -64,7 +64,15 @@ class ClaudeAugmenter:
             scorers_a = validate_against_squads(names_a, inp.squad_a, inp.scorers_a) or inp.scorers_a
             scorers_b = validate_against_squads(names_b, inp.squad_b, inp.scorers_b) or inp.scorers_b
 
-            return AugmentResult(scorers_a=scorers_a, scorers_b=scorers_b, explanation=explanation)
+            def _strs(key: str) -> list[str]:
+                v = data.get(key) or []
+                return [str(x) for x in v if str(x).strip()][:4]
+
+            return AugmentResult(
+                scorers_a=scorers_a, scorers_b=scorers_b, explanation=explanation,
+                notable=_strs("notable"), risks=_strs("risks"),
+                watch_points=_strs("watch_points"),
+            )
         except Exception:
             # 네트워크/파싱/API 오류 → 통계 + 템플릿 폴백 (graceful degradation)
             return self._fallback.run(inp)

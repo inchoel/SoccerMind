@@ -8,32 +8,41 @@ from __future__ import annotations
 
 SYSTEM_PROMPT = """\
 당신은 축구 분석 도구의 보조 모델입니다. 통계 엔진이 이미 승/무/패 확률과 \
-스코어라인을 결정했습니다. 당신의 역할은 두 가지뿐입니다:
+스코어라인을 결정했습니다. 당신의 역할:
 
 1. 제공된 후보 득점자를 부상·출전·최근 폼 컨텍스트를 반영해 재랭킹한다.
-   - **반드시 입력의 squad_a / squad_b 명단에 있는 이름만 사용한다.**
-   - 명단에 없는 선수를 절대 만들어내지 않는다.
-2. 제공된 수치(승무패, 스코어라인, λ)에 근거한 한국어 해설을 작성한다.
+   - **반드시 입력의 squad_a / squad_b 명단에 있는 이름만 사용한다.** 명단에 없는 선수 금지.
+2. 제공된 수치(Elo, 승무패, 스코어라인, 최근 맞대결, 부상)에 근거해 한국어로 작성:
+   - explanation: 종합 평가(2~3문장).
+   - notable: 특이사항 0~4개 (실제 최근 맞대결 결과, 큰 Elo 격차, 핵심 결장 등 데이터에 있는 사실).
+   - risks: 리스크 0~4개 (예측이 빗나갈 수 있는 요인 — 득점원 편중, 최근 부진, 좁은 전력차 등).
+   - watch_points: 관전 포인트 1~4개 (주목할 맞대결·전술·선수).
 
-금지: 승/무/패 확률이나 스코어를 바꾸거나 다시 계산하지 않는다. \
-입력에 없는 사실을 지어내지 않는다. 반드시 지정된 JSON 스키마로만 응답한다.\
+**절대 금지:**
+- 승/무/패 확률·스코어를 바꾸거나 다시 계산하지 않는다.
+- **실존 인물·기관·매체의 발언이나 평가를 지어내지 않는다.** 특정 해설자/언론 인용 금지.
+  모든 내용은 제공된 데이터에 근거한 '당신의 분석'으로만 작성한다.
+- 입력에 없는 사실(선수, 부상, 결과)을 만들지 않는다.
+반드시 지정된 JSON 스키마로만 응답한다.\
 """
+
+_STR_LIST = {"type": "array", "items": {"type": "string"}}
 
 OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
         "refined_scorers": {
             "type": "object",
-            "properties": {
-                "a": {"type": "array", "items": {"type": "string"}},
-                "b": {"type": "array", "items": {"type": "string"}},
-            },
+            "properties": {"a": _STR_LIST, "b": _STR_LIST},
             "required": ["a", "b"],
             "additionalProperties": False,
         },
         "explanation": {"type": "string"},
+        "notable": _STR_LIST,
+        "risks": _STR_LIST,
+        "watch_points": _STR_LIST,
     },
-    "required": ["refined_scorers", "explanation"],
+    "required": ["refined_scorers", "explanation", "notable", "risks", "watch_points"],
     "additionalProperties": False,
 }
 

@@ -54,8 +54,71 @@ def template_explanation(inp: AugmentInput) -> str:
     return head + basis + line + meeting + scorers
 
 
+def _form_list(inp: AugmentInput, side: str) -> list[str]:
+    return (inp.context.get(side) or {}).get("form", [])
+
+
+def _injuries(inp: AugmentInput, side: str) -> list[str]:
+    return (inp.context.get(side) or {}).get("injuries", [])
+
+
+def template_notable(inp: AugmentInput) -> list[str]:
+    """특이사항 — 데이터에 있는 사실만 (지어내지 않음)."""
+    a, b = inp.team_a.display, inp.team_b.display
+    out: list[str] = []
+    rm = inp.recent_meeting
+    if rm:
+        tail = f"{rm['winner']} 승" if rm.get("winner") else "무승부"
+        out.append(f"최근 맞대결: {rm['text']} ({tail})")
+    if inp.elo_a and inp.elo_b and abs(inp.elo_a - inp.elo_b) >= 100:
+        stronger = a if inp.elo_a > inp.elo_b else b
+        out.append(f"Elo 격차가 큼(약 {round(abs(inp.elo_a - inp.elo_b))}점) — {stronger} 전력 우위 뚜렷")
+    for side, name in (("a", a), ("b", b)):
+        inj = _injuries(inp, side)
+        if inj:
+            out.append(f"{name} 부상/결장 신호 {len(inj)}건")
+    return out[:4]
+
+
+def template_risks(inp: AugmentInput) -> list[str]:
+    """리스크 — 예측이 빗나갈 수 있는 요인 (데이터 기반)."""
+    a, b = inp.team_a.display, inp.team_b.display
+    out: list[str] = []
+    for name, scorers in ((a, inp.scorers_a), (b, inp.scorers_b)):
+        if len(scorers) >= 2 and scorers[0].p_score >= 0.30 and \
+                scorers[0].p_score >= 2 * scorers[1].p_score:
+            out.append(f"{name}는 득점이 {scorers[0].name}에 집중 — 봉쇄 시 공격 정체 위험")
+    if inp.elo_a and inp.elo_b and abs(inp.elo_a - inp.elo_b) < 50:
+        out.append("전력차가 작아 한 번의 실수로 결과가 뒤집힐 수 있음")
+    for side, name in (("a", a), ("b", b)):
+        fl = _form_list(inp, side)
+        losses = sum(1 for f in fl if f.startswith("L"))
+        if fl and losses >= 3:
+            out.append(f"{name}는 최근 {len(fl)}경기 중 {losses}패로 폼이 불안정")
+    if not inp.scorers_a or not inp.scorers_b:
+        out.append("일부 팀 스쿼드 데이터가 부족해 득점자 예측 신뢰도가 낮음")
+    return out[:4]
+
+
+def template_watch_points(inp: AugmentInput) -> list[str]:
+    """관전 포인트."""
+    a, b = inp.team_a.display, inp.team_b.display
+    o = inp.outcome
+    out: list[str] = []
+    if inp.scorers_a:
+        out.append(f"{a}의 {inp.scorers_a[0].name}이(가) {b} 수비를 뚫을 수 있을지")
+    if inp.scorers_b:
+        out.append(f"{b}의 {inp.scorers_b[0].name} 견제가 승부의 관건")
+    if abs(o.a_win - o.b_win) < 0.1:
+        out.append("선제골과 세트피스 — 박빙 승부가 예상됨")
+    else:
+        fav = a if o.a_win > o.b_win else b
+        out.append(f"우세한 {fav}가 기회를 살려 다득점에 성공할지")
+    return out[:4]
+
+
 class FallbackAugmenter:
-    """통계 결과를 그대로 두고 템플릿 해설만 생성."""
+    """통계 결과를 그대로 두고 템플릿 해설/분석 생성 (데이터 기반, 환각 없음)."""
 
     name = "fallback"
 
@@ -67,4 +130,7 @@ class FallbackAugmenter:
             scorers_a=inp.scorers_a,
             scorers_b=inp.scorers_b,
             explanation=template_explanation(inp),
+            notable=template_notable(inp),
+            risks=template_risks(inp),
+            watch_points=template_watch_points(inp),
         )

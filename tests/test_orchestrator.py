@@ -70,6 +70,14 @@ def test_scoreline_consistent_with_winner():
     assert pred.scoreline[0] > pred.scoreline[1]  # 헤드라인 스코어도 A 우세
 
 
+def test_meta_includes_analysis_sections():
+    svc = _service()
+    pred = svc.predict("브라질", "대한민국")
+    an = pred.meta["analysis"]
+    assert "notable" in an and "risks" in an and "watch_points" in an
+    assert isinstance(an["watch_points"], list)
+
+
 def test_winner_property():
     svc = _service()
     pred = svc.predict("브라질", "대한민국")

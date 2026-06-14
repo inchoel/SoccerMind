@@ -3,7 +3,13 @@
 from soccermind.core.models import PlayerStat, ResolvedTeam, ScorerProb
 from soccermind.engine.score_matrix import Outcome
 from soccermind.llm.base import AugmentInput, validate_against_squads
-from soccermind.llm.fallback import FallbackAugmenter, template_explanation
+from soccermind.llm.fallback import (
+    FallbackAugmenter,
+    template_explanation,
+    template_notable,
+    template_risks,
+    template_watch_points,
+)
 
 
 def _input(a_win=0.61, draw=0.18, b_win=0.21):
@@ -29,6 +35,40 @@ def test_template_explanation_mentions_winner_and_score():
 def test_template_explanation_draw_case():
     text = template_explanation(_input(a_win=0.3, draw=0.45, b_win=0.25))
     assert "무승부" in text
+
+
+def test_notable_includes_recent_meeting_and_elo_gap():
+    inp = _input()
+    inp.elo_a, inp.elo_b = 1980.0, 1745.0  # 235점 격차
+    inp.recent_meeting = {"a_goals": 2, "b_goals": 1, "winner": "브라질",
+                          "text": "브라질 2-1 대한민국"}
+    inp.context = {"a": {"injuries": ["Neymar OUT"]}, "b": {}}
+    notable = template_notable(inp)
+    assert any("최근 맞대결" in n for n in notable)
+    assert any("Elo 격차" in n for n in notable)
+    assert any("부상" in n for n in notable)
+
+
+def test_risks_flag_scorer_concentration():
+    inp = _input()
+    # 득점이 한 명에 집중 (0.5 >> 2*0.2)
+    inp.scorers_a = [ScorerProb("Star", 0.7, 0.5), ScorerProb("Other", 0.2, 0.18)]
+    risks = template_risks(inp)
+    assert any("집중" in r for r in risks)
+
+
+def test_watch_points_non_empty():
+    wp = template_watch_points(_input())
+    assert len(wp) >= 1
+
+
+def test_fallback_augmenter_produces_analysis_sections():
+    inp = _input()
+    inp.recent_meeting = {"a_goals": 2, "b_goals": 1, "winner": "브라질",
+                          "text": "브라질 2-1 대한민국"}
+    result = FallbackAugmenter().run(inp)
+    assert result.notable and result.watch_points
+    assert isinstance(result.risks, list)
 
 
 def test_fallback_augmenter_keeps_scorers():

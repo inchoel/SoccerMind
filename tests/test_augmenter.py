@@ -69,6 +69,20 @@ def test_run_reranks_valid_scorers():
     assert result.explanation.startswith("브라질")
 
 
+def test_run_parses_analysis_sections():
+    payload = {
+        "refined_scorers": {"a": ["Vinicius"], "b": ["Son"]},
+        "explanation": "종합 평가.",
+        "notable": ["최근 맞대결 브라질 승", "Elo 격차 큼"],
+        "risks": ["득점 편중"],
+        "watch_points": ["비니시우스 vs 한국 수비", "세트피스"],
+    }
+    result = ClaudeAugmenter(client=FakeClient(payload)).run(_input())
+    assert result.notable == ["최근 맞대결 브라질 승", "Elo 격차 큼"]
+    assert result.risks == ["득점 편중"]
+    assert len(result.watch_points) == 2
+
+
 def test_run_rejects_hallucinated_name_falls_back():
     # 스쿼드에 없는 'Messi' → 가드레일이 통계 랭킹으로 폴백 (A팀만)
     payload = {

@@ -37,6 +37,9 @@ class AugmentResult:
     scorers_a: list[ScorerProb]
     scorers_b: list[ScorerProb]
     explanation: str
+    notable: list[str] = field(default_factory=list)  # 특이사항
+    risks: list[str] = field(default_factory=list)  # 리스크
+    watch_points: list[str] = field(default_factory=list)  # 관전 포인트
 
 
 @runtime_checkable

@@ -72,6 +72,14 @@ textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
 .score-prob { text-align: center; color: var(--muted); margin-bottom: 1.25rem; }
 
 .recent-meeting { text-align: center; margin: 0.5rem 0 0.75rem; padding: 0.5rem 0.8rem; background: #15233a; border: 1px solid #2dd4bf55; border-radius: 8px; font-size: 0.9rem; color: #cfe9ff; }
+.eval-line { text-align: center; margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--muted); }
+.eval-line .dim { color: #5d6b7d; }
+
+.analysis-sec { margin-top: 1rem; padding: 0.7rem 0.95rem; border-radius: 8px; background: #0f1622; border-left: 3px solid var(--accent); }
+.analysis-sec.a-risk { border-left-color: var(--accent-2); }
+.analysis-sec.a-watch { border-left-color: var(--a); }
+.analysis-sec h4 { margin: 0 0 0.45rem; font-size: 0.92rem; }
+.analysis-sec ul { margin: 0; padding-left: 1.1rem; color: var(--text); font-size: 0.86rem; line-height: 1.65; }
 
 .wdl-bar { display: flex; height: 30px; border-radius: 8px; overflow: hidden; margin: 0.5rem 0 0.25rem; }
 .wdl-bar .seg { display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; }

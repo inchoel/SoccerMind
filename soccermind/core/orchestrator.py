@@ -173,6 +173,11 @@ class PredictionService:
             explanation=result.explanation,
             meta={
                 "augmenter": getattr(aug, "name", "augmenter"),
+                "analysis": {
+                    "notable": result.notable,
+                    "risks": result.risks,
+                    "watch_points": result.watch_points,
+                },
                 "lambda": {"a": round(lam_a, 3), "b": round(lam_b, 3)},
                 "elo": {"a": round(td_a.elo, 1), "b": round(td_b.elo, 1)},
                 "sources_used": {"a": td_a.context.get("sources_used", []),
