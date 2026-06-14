@@ -41,6 +41,19 @@ def test_parse_empty():
     assert parse_squad_from_wikitext("본문에 선수 템플릿 없음") == []
 
 
+def test_parse_squad_sortname_template():
+    # 미국 등 일부 문서는 선수명을 {{sortname|First|Last}} 로 표기
+    wt = """
+    {{nat fs g player|pos=FW|no=10|name={{sortname|Christian|Pulisic}}|caps=70|goals=30}}
+    {{nat fs g player|pos=MF|no=8|name={{sortname|Weston|McKennie|nolink=1}}|caps=55|goals=12}}
+    """
+    squad = parse_squad_from_wikitext(wt)
+    names = [p.name for p in squad]
+    assert "Christian Pulisic" in names
+    assert "Weston McKennie" in names  # 3번째 인자(nolink) 처리
+    assert all("{{" not in n for n in names)
+
+
 # 실제 문서가 쓰는 형식: {{nat fs g player}} + 내부 중첩 템플릿({{birth date and age}})
 NAT_FS_G_WIKITEXT = """
 {{nat fs start}}

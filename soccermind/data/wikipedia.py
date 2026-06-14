@@ -34,17 +34,46 @@ _TITLE_SUFFIXES = (
 )
 
 
+_PARAM_BOUNDARY_RE = re.compile(r"\s*[\w-]+\s*=")
+
+
 def _param(block: str, key: str) -> str:
-    # 값은 다음 파라미터(|word=) 또는 블록 끝까지 — 위키링크 내부 '|' 에 끊기지 않도록
-    m = re.search(
-        rf"\|\s*{key}\s*=\s*(.*?)(?=\s*\|\s*[\w-]+\s*=|$)",
-        block,
-        re.IGNORECASE | re.DOTALL,
-    )
-    return m.group(1).strip() if m else ""
+    """템플릿 파라미터 값 추출. 중첩 {{...}}/[[...]] 내부의 '|word=' 는 경계로 보지 않음.
+
+    (예: name={{sortname|Matt|Turner|nolink=1}} 에서 |nolink= 에 끊기지 않도록.)
+    """
+    m = re.search(rf"\|\s*{re.escape(key)}\s*=", block, re.IGNORECASE)
+    if not m:
+        return ""
+    i, n = m.end(), len(block)
+    depth = 0
+    buf: list[str] = []
+    while i < n:
+        if block.startswith(("{{", "[["), i):
+            depth += 1
+            buf.append(block[i : i + 2])
+            i += 2
+            continue
+        if block.startswith(("}}", "]]"), i):
+            depth = max(0, depth - 1)
+            buf.append(block[i : i + 2])
+            i += 2
+            continue
+        if block[i] == "|" and depth == 0 and _PARAM_BOUNDARY_RE.match(block, i + 1):
+            break  # 최상위 다음 파라미터 시작
+        buf.append(block[i])
+        i += 1
+    return "".join(buf).strip()
+
+
+_SORTNAME_RE = re.compile(
+    r"\{\{\s*sortname\s*\|\s*([^|}]+?)\s*\|\s*([^|}]+?)\s*(?:\|[^}]*)?\}\}", re.IGNORECASE
+)
 
 
 def _clean_name(raw: str) -> str:
+    # {{sortname|First|Last|...}} → "First Last" (미국 등 일부 문서 표기)
+    raw = _SORTNAME_RE.sub(r"\1 \2", raw)
     # [[A|B]] → B, [[A]] → A, 굵게/기울임 마크업 제거
     raw = re.sub(r"\[\[(?:[^\]|]*\|)?([^\]]*)\]\]", r"\1", raw)
     return raw.replace("'''", "").replace("''", "").strip()
