@@ -83,7 +83,9 @@ class PredictionService:
                 partial: PartialTeamData = p.fetch(team)
             except Exception:
                 continue
-            used.append(p.name)
+            # 실제로 데이터를 기여한 provider 만 기록 (빈 응답은 제외 → 정확한 출처)
+            if (partial.elo is not None) or partial.squad or partial.context:
+                used.append(p.name)
             if elo is None and partial.elo is not None:
                 elo = partial.elo
             if not squad and partial.squad:
@@ -139,6 +141,7 @@ class PredictionService:
             meta={
                 "augmenter": getattr(aug, "name", "augmenter"),
                 "lambda": {"a": round(lam_a, 3), "b": round(lam_b, 3)},
+                "elo": {"a": round(td_a.elo, 1), "b": round(td_b.elo, 1)},
                 "sources_used": {"a": td_a.context.get("sources_used", []),
                                  "b": td_b.context.get("sources_used", [])},
                 "form": {"a": td_a.context.get("form", []),

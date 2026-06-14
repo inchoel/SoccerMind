@@ -102,6 +102,12 @@ textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
 .meta { margin-top: 1rem; color: var(--muted); font-size: 0.78rem; }
 .meta .warn { color: var(--accent-2); }
 
+.sources { margin-top: 1rem; background: #0f1622; border-radius: 8px; padding: 0.6rem 0.9rem; }
+.sources summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--accent); }
+.source-list { margin: 0.6rem 0 0.2rem; padding-left: 1.1rem; color: var(--muted); font-size: 0.84rem; line-height: 1.7; }
+.source-list b { color: var(--text); font-weight: 600; margin-right: 0.4rem; }
+.source-list .dim { color: #5d6b7d; }
+
 .champ-title { margin: 0 0 1rem; text-align: center; }
 .champ-list { list-style: none; margin: 0; padding: 0; }
 .champ-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0; }

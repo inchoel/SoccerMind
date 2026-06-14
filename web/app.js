@@ -1,5 +1,17 @@
 "use strict";
 
+const SOURCE_LABELS = {
+  elo: "팀 강도 Elo (eloratings.net)",
+  wikipedia: "스쿼드·최근폼 (Wikipedia)",
+  api_football: "선수 득점 통계 (API-Football)",
+  football_data: "스쿼드 (football-data.org)",
+  web_search: "부상/결장 속보 (웹검색)",
+};
+const AUG_LABELS = {
+  claude: "Claude LLM (득점자 재랭킹·해설)",
+  fallback: "통계 템플릿 해설",
+};
+
 const pct = (x) => `${Math.round(x * 100)}%`;
 const pct1 = (x) => `${(x * 100).toFixed(1)}%`;
 const esc = (s) =>
@@ -79,6 +91,25 @@ function renderMatch(d) {
   const injHtml = (inj.a.length || inj.b.length)
     ? `<div class="injuries">${injLine(a, inj.a)}${injLine(b, inj.b)}</div>` : "";
 
+  // 참조 데이터 섹션
+  const su = d.meta.sources_used || { a: [], b: [] };
+  const usedSet = [...new Set([...(su.a || []), ...(su.b || [])])];
+  const sourceItems = usedSet.map((s) => SOURCE_LABELS[s] || s);
+  const elo = d.meta.elo || {};
+  const lam = d.meta.lambda || {};
+  const augLabel = AUG_LABELS[d.meta.augmenter] || d.meta.augmenter || "-";
+  const sourcesHtml = `
+    <details class="sources" open>
+      <summary>📊 참조 데이터</summary>
+      <ul class="source-list">
+        <li><b>통계 모델</b> Elo → 기대득점(λ) → 스코어 매트릭스 (Dixon-Coles 포아송)</li>
+        <li><b>Elo 레이팅</b> ${esc(a)} ${elo.a ?? "-"} · ${esc(b)} ${elo.b ?? "-"}
+            ${lam.a != null ? `<span class="dim">(λ ${lam.a} / ${lam.b})</span>` : ""}</li>
+        <li><b>데이터 출처</b> ${sourceItems.length ? sourceItems.map(esc).join(", ") : "-"}</li>
+        <li><b>해설 엔진</b> ${esc(augLabel)}</li>
+      </ul>
+    </details>`;
+
   resultEl.innerHTML = `
     <div class="winner-line">${winnerLine}</div>
     <div class="scoreline"><span class="pa">${d.scoreline.a}</span> : <span class="pb">${d.scoreline.b}</span></div>
@@ -96,7 +127,8 @@ function renderMatch(d) {
     ${formHtml}
     ${injHtml}
     <div class="explanation">${esc(d.explanation)}</div>
-    <div class="meta">엔진: ${esc(d.meta.augmenter || "-")} · λ ${d.meta.lambda ? `${d.meta.lambda.a} / ${d.meta.lambda.b}` : "-"}${warnHtml}</div>
+    ${sourcesHtml}
+    ${warnHtml ? `<div class="meta">${warnHtml}</div>` : ""}
   `;
   resultEl.hidden = false;
 }

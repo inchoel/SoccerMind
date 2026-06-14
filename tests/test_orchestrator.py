@@ -128,6 +128,27 @@ def test_tournament_invalid_count_raises():
         svc.tournament(["브라질", "대한민국", "일본"])  # 3팀 (2의 거듭제곱 아님)
 
 
+def test_meta_reports_elo_and_only_contributing_sources():
+    # 참조 데이터 투명성: meta.elo + 실제로 기여한 provider 만 sources_used 에
+    class EmptyButAvailable(DataProvider):
+        name = "empty"
+
+        def available(self):
+            return True
+
+        def fetch(self, team):
+            return PartialTeamData(source="empty")  # 빈 응답 (기여 없음)
+
+    elo = FakeEloProvider({"Brazil": 2024.0, "Korea South": 1745.0})
+    svc = PredictionService(providers=[elo, EmptyButAvailable()])
+    pred = svc.predict("브라질", "대한민국")
+    assert pred.meta["elo"]["a"] == 2024.0
+    assert pred.meta["elo"]["b"] == 1745.0
+    # Elo provider 는 기여 → 목록에, 빈 provider 는 제외
+    assert "fake_elo" in pred.meta["sources_used"]["a"]
+    assert "empty" not in pred.meta["sources_used"]["a"]
+
+
 def test_unavailable_provider_skipped():
     class Down(DataProvider):
         name = "down"
