@@ -154,8 +154,8 @@ def test_form_surfaced_in_prediction_meta(tmp_path):
             return True
 
         def fetch(self, team: ResolvedTeam):
-            return PartialTeamData(source="elo", elo={"Korea South": 1745.0,
-                                                      "Japan": 1750.0}.get(team.elo_name))
+            return PartialTeamData(source="elo", elo={"KR": 1745.0,
+                                                      "JP": 1750.0}.get(team.elo_name))
 
     wiki = WikipediaProvider(fetch_wikitext=lambda t: FORM_WIKITEXT, cache=DiskCache(tmp_path))
     svc = PredictionService(providers=[FakeElo(), wiki])
@@ -172,7 +172,7 @@ def test_covers_team_without_source_ids(tmp_path):
             return True
 
         def fetch(self, team: ResolvedTeam):
-            ratings = {"Brazil": 2024.0, "Korea South": 1745.0}
+            ratings = {"BR": 2024.0, "KR": 1745.0}
             return PartialTeamData(source="elo", elo=ratings.get(team.elo_name))
 
     wiki = WikipediaProvider(fetch_wikitext=lambda t: WIKITEXT, cache=DiskCache(tmp_path))

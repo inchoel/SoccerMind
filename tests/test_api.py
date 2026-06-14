@@ -17,7 +17,7 @@ class FakeElo(DataProvider):
         return True
 
     def fetch(self, team: ResolvedTeam):
-        ratings = {"Brazil": 2024.0, "Korea South": 1745.0}
+        ratings = {"BR": 2024.0, "KR": 1745.0}
         return PartialTeamData(source="elo", elo=ratings.get(team.elo_name))
 
 

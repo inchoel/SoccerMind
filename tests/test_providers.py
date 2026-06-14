@@ -8,29 +8,29 @@ from soccermind.data.football_data import FootballDataProvider, parse_squad
 
 R = NameResolver()
 
-# eloratings.net World.tsv 샘플 (rank, name, ..., rating 형태를 관용 파싱)
+# eloratings.net World.tsv 샘플 (rank, 2글자코드, ..., rating). 실제 형식은 코드 사용.
 ELO_TSV = (
-    "1\tSpain\t0\t2157\n"
-    "2\tArgentina\t0\t2115\n"
-    "3\tFrance\t-1\t2063\n"
-    "5\tBrazil\t2\t2024\n"
-    "23\tKorea South\t1\t1745\n"
+    "1\tES\t0\t2157\n"
+    "2\tAR\t0\t2115\n"
+    "3\tFR\t-1\t2063\n"
+    "5\tBR\t2\t2024\n"
+    "23\tKR\t1\t1745\n"
     "\n"  # 빈 줄 무시
 )
 
 
 def test_parse_elo_tsv():
     ratings = parse_elo_tsv(ELO_TSV)
-    assert ratings["Spain"] == 2157.0
-    assert ratings["Korea South"] == 1745.0
-    assert "France" in ratings
+    assert ratings["ES"] == 2157.0
+    assert ratings["KR"] == 1745.0
+    assert "FR" in ratings
     assert len(ratings) == 5  # 빈 줄 제외
 
 
 def test_parse_elo_ignores_rank_as_rating():
     # rank(1,2,..)는 레이팅(1000~2500)으로 오인되면 안 됨
-    ratings = parse_elo_tsv("1\tSpain\t0\t2157\n")
-    assert ratings == {"Spain": 2157.0}
+    ratings = parse_elo_tsv("1\tES\t0\t2157\n")
+    assert ratings == {"ES": 2157.0}
 
 
 def test_elo_provider_fetch_uses_injected_text(tmp_path):

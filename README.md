@@ -62,7 +62,7 @@ python -m venv .venv && .venv\Scripts\activate        # Windows (macOS/Linux: so
 pip install -e ".[dev]"                                # LLM 포함: ".[dev,llm]"
 cp .env.example .env                                   # 본인 키 입력 (없어도 동작)
 uvicorn soccermind.api.app:app --reload                # → http://127.0.0.1:8000
-pytest -q                                              # 테스트 (현재 146 passed)
+pytest -q                                              # 테스트 (현재 148 passed)
 ```
 
 브라우저에서 **경기 예측**과 **토너먼트 우승** 두 탭을 사용할 수 있습니다.

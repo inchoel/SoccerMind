@@ -7,6 +7,7 @@ football-data 는 스쿼드 이름만 주지만, API-Football 은 선수별 득�
 
 from __future__ import annotations
 
+import datetime
 import os
 from collections.abc import Callable
 from typing import Any
@@ -17,7 +18,8 @@ from .cache import DiskCache
 
 BASE_URL = "https://v3.football.api-sports.io"
 _TTL = 24 * 3600
-DEFAULT_SEASON = 2026
+# 예측 수행 시점의 연도를 시즌으로 사용 (최신 정보 반영)
+DEFAULT_SEASON = datetime.date.today().year
 
 
 def _int(v: Any) -> int:

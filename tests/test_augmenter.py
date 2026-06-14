@@ -117,7 +117,7 @@ def test_orchestrator_uses_claude_when_available():
             return True
 
         def fetch(self, team):
-            ratings = {"Brazil": 2024.0, "Korea South": 1745.0}
+            ratings = {"BR": 2024.0, "KR": 1745.0}
             return PartialTeamData(source="elo", elo=ratings.get(team.elo_name))
 
     payload = {"refined_scorers": {"a": [], "b": []}, "explanation": "클로드 해설"}

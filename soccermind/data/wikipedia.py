@@ -89,40 +89,34 @@ def team_token(wikipedia_title: str) -> str:
 
 
 def _find_templates(text: str, name: str) -> list[str]:
-    """중첩 중괄호를 고려해 최상위 {{name ...}} 템플릿 내부 내용을 추출."""
+    """{{name ...}} 템플릿들의 내부 내용을 추출 (중첩 중괄호 인식).
+
+    각 템플릿 '시작'을 정규식으로 직접 찾고 그 지점부터 지역 중괄호 균형 스캔으로
+    끝을 찾는다 → 문서 다른 곳의 불균형 중괄호(큰 인포박스 등)에 영향받지 않음.
+    이름 뒤 경계(|/})로 'Football box' 가 'Football box collapsible' 을 매칭하지 않게 함.
+    """
     blocks: list[str] = []
-    low, nlow, n = text.lower(), name.lower(), len(text)
-    i = 0
-    while i < n:
-        if text.startswith("{{", i):
-            j = i + 2
-            while j < n and text[j] in " \t\n":
-                j += 1
-            is_match = low.startswith(nlow, j)
-            if is_match:
-                # 이름 뒤 경계 확인 (공백 후 '|' 또는 '}') → 'Football box' 가
-                # 'Football box collapsible' 을 매칭하지 않도록
-                e = j + len(name)
-                while e < n and text[e] in " \t\n":
-                    e += 1
-                is_match = e < n and text[e] in "|}"
-            depth, k = 0, i
-            while k < n:
-                if text.startswith("{{", k):
-                    depth += 1
-                    k += 2
-                elif text.startswith("}}", k):
-                    depth -= 1
-                    k += 2
-                    if depth == 0:
-                        break
-                else:
-                    k += 1
-            if is_match:
-                blocks.append(text[i + 2 : k - 2])
-            i = k
-        else:
-            i += 1
+    n = len(text)
+    last_end = 0
+    start_re = re.compile(r"\{\{\s*" + re.escape(name) + r"\s*(?=[|}])", re.IGNORECASE)
+    for m in start_re.finditer(text):
+        s = m.start()
+        if s < last_end:  # 앞 템플릿 내부에 중첩된 동명 시작은 건너뜀
+            continue
+        depth, k = 0, s
+        while k < n:
+            if text.startswith("{{", k):
+                depth += 1
+                k += 2
+            elif text.startswith("}}", k):
+                depth -= 1
+                k += 2
+                if depth == 0:
+                    break
+            else:
+                k += 1
+        blocks.append(text[s + 2 : k - 2])
+        last_end = k
     return blocks
 
 

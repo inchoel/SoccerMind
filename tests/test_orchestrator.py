@@ -34,7 +34,7 @@ class FakeSquadProvider(DataProvider):
 
 
 def _service():
-    elo = FakeEloProvider({"Brazil": 2024.0, "Korea South": 1745.0})
+    elo = FakeEloProvider({"BR": 2024.0, "KR": 1745.0})
     squads = FakeSquadProvider(
         {
             "BRA": [PlayerStat("Vinicius", intl_goals=10, matches=30, position="Offence"),
@@ -92,7 +92,7 @@ def test_resolution_error_on_unknown():
 
 def test_missing_elo_uses_default_with_warning():
     # Elo provider 가 한 팀만 알고 있을 때
-    elo = FakeEloProvider({"Brazil": 2024.0})  # 한국 Elo 없음
+    elo = FakeEloProvider({"BR": 2024.0})  # 한국 Elo 없음
     svc = PredictionService(providers=[elo])
     pred = svc.predict("브라질", "대한민국")
     assert any("Elo 미상" in w for w in pred.meta["warnings"])
@@ -101,7 +101,7 @@ def test_missing_elo_uses_default_with_warning():
 
 
 def test_host_advantage_changes_lambda():
-    elo = FakeEloProvider({"Brazil": 1800.0, "Korea South": 1800.0})
+    elo = FakeEloProvider({"BR": 1800.0, "KR": 1800.0})
     svc = PredictionService(providers=[elo])
     neutral = svc.predict("브라질", "대한민국")
     hosted = svc.predict("브라질", "대한민국", PredictOptions(host_key="BRA"))
@@ -110,8 +110,8 @@ def test_host_advantage_changes_lambda():
 
 
 def test_tournament_championship_probs():
-    elo = FakeEloProvider({"Brazil": 2024.0, "Korea South": 1745.0,
-                           "Japan": 1750.0, "Argentina": 2115.0})
+    elo = FakeEloProvider({"BR": 2024.0, "KR": 1745.0,
+                           "JP": 1750.0, "AR": 2115.0})
     svc = PredictionService(providers=[elo])
     res = svc.tournament(["브라질", "대한민국", "일본", "아르헨티나"])
     names = [n for n, _ in res]
@@ -122,7 +122,7 @@ def test_tournament_championship_probs():
 
 
 def test_tournament_invalid_count_raises():
-    elo = FakeEloProvider({"Brazil": 2024.0, "Korea South": 1745.0})
+    elo = FakeEloProvider({"BR": 2024.0, "KR": 1745.0})
     svc = PredictionService(providers=[elo])
     with pytest.raises(ValueError):
         svc.tournament(["브라질", "대한민국", "일본"])  # 3팀 (2의 거듭제곱 아님)
@@ -139,7 +139,7 @@ def test_meta_reports_elo_and_only_contributing_sources():
         def fetch(self, team):
             return PartialTeamData(source="empty")  # 빈 응답 (기여 없음)
 
-    elo = FakeEloProvider({"Brazil": 2024.0, "Korea South": 1745.0})
+    elo = FakeEloProvider({"BR": 2024.0, "KR": 1745.0})
     svc = PredictionService(providers=[elo, EmptyButAvailable()])
     pred = svc.predict("브라질", "대한민국")
     assert pred.meta["elo"]["a"] == 2024.0
@@ -159,7 +159,7 @@ def test_unavailable_provider_skipped():
         def fetch(self, team):
             raise AssertionError("불가용 provider 는 호출되면 안 됨")
 
-    elo = FakeEloProvider({"Brazil": 2024.0, "Korea South": 1745.0})
+    elo = FakeEloProvider({"BR": 2024.0, "KR": 1745.0})
     svc = PredictionService(providers=[Down(), elo])
     pred = svc.predict("브라질", "대한민국")  # 예외 없이 동작
     assert pred.meta["augmenter"] == "fallback"

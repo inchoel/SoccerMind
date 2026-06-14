@@ -80,7 +80,7 @@ def test_scorer_ranking_uses_goal_stats(tmp_path):
             return True
 
         def fetch(self, team: ResolvedTeam):
-            ratings = {"Korea South": 1745.0, "Japan": 1750.0}
+            ratings = {"KR": 1745.0, "JP": 1750.0}
             return PartialTeamData(source="elo", elo=ratings.get(team.elo_name))
 
     apif = ApiFootballProvider(key="K", fetch_json=lambda u, k: PLAYERS_JSON,

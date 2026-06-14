@@ -34,7 +34,7 @@ def test_typo_fuzzy_match():
 
 def test_source_identifiers_present():
     r = R.resolve("대한민국")
-    assert r.elo_name == "Korea South"
+    assert r.elo_name == "KR"  # eloratings 2글자 코드
     assert r.wikipedia == "South Korea national football team"
     # 검증된 source ID 가 없으면 None (잘못된 ID 로 다른 팀 스쿼드를 가져오지 않도록)
     assert r.fd_id is None

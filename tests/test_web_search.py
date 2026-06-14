@@ -82,8 +82,8 @@ def test_injuries_surfaced_in_prediction_meta(tmp_path):
             return True
 
         def fetch(self, team: ResolvedTeam):
-            return PartialTeamData(source="elo", elo={"Korea South": 1745.0,
-                                                      "Japan": 1750.0}.get(team.elo_name))
+            return PartialTeamData(source="elo", elo={"KR": 1745.0,
+                                                      "JP": 1750.0}.get(team.elo_name))
 
     ws = WebSearchProvider(enabled=True, search=lambda q: parse_ddg_results(DDG_HTML),
                            cache=DiskCache(tmp_path))
