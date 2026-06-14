@@ -61,6 +61,15 @@ def test_end_to_end_prediction():
     assert pred.meta["augmenter"] == "fallback"
 
 
+def test_scoreline_consistent_with_winner():
+    # 승리 예상과 스코어가 모순되지 않아야 (승 예상인데 1-1 방지)
+    elo = FakeEloProvider({"BR": 2100.0, "KR": 1600.0})
+    svc = PredictionService(providers=[elo])
+    pred = svc.predict("브라질", "대한민국")
+    assert pred.winner.key == "BRA"
+    assert pred.scoreline[0] > pred.scoreline[1]  # 헤드라인 스코어도 A 우세
+
+
 def test_winner_property():
     svc = _service()
     pred = svc.predict("브라질", "대한민국")

@@ -12,7 +12,8 @@ from ..data.base import DataProvider
 from ..engine.config import DEFAULT_CONFIG, ModelConfig
 from ..engine.elo import elo_to_lambda, venue_adjustment
 from ..engine.score_matrix import (
-    most_likely_scoreline,
+    Outcome,
+    most_likely_scoreline_for,
     outcome_probabilities,
     score_matrix,
     top_scorelines,
@@ -31,6 +32,32 @@ from .models import (
 from .name_resolver import NameResolver
 
 DEFAULT_RATING = 1500.0  # Elo 미상 팀의 중립 기본값 (meta 에 경고 기록)
+
+
+def _argmax_region(o: Outcome) -> str:
+    """예측 결과 영역: 'a'(A승) / 'draw'(무) / 'b'(B승)."""
+    best = max(o.a_win, o.draw, o.b_win)
+    if best == o.draw:
+        return "draw"
+    return "a" if o.a_win > o.b_win else "b"
+
+
+def _recent_meeting(td_a: "TeamData", team_b: "ResolvedTeam") -> dict | None:
+    """A의 최근 결과에서 상대가 B인 '실제로 치러진' 가장 최근 경기. 없으면 None."""
+    for r in td_a.context.get("form_results", []):
+        if r.get("opp") == team_b.key:
+            ga_, gb = r["gf"], r["ga"]  # A 관점 (gf=A득점, ga=B득점)
+            if ga_ > gb:
+                winner = td_a.team.display
+            elif ga_ < gb:
+                winner = team_b.display
+            else:
+                winner = None
+            return {
+                "a_goals": ga_, "b_goals": gb, "winner": winner,
+                "text": f"{td_a.team.display} {ga_}-{gb} {team_b.display}",
+            }
+    return None
 
 
 class ResolutionError(Exception):
@@ -114,8 +141,13 @@ class PredictionService:
         lam_a, lam_b = elo_to_lambda(td_a.elo, td_b.elo, h_a, h_b, self.cfg)
         matrix = score_matrix(lam_a, lam_b, self.cfg)
         outcome = outcome_probabilities(matrix)
-        x, y, sp = most_likely_scoreline(matrix)
         tops = top_scorelines(matrix, n=5)
+        # 헤드라인 스코어는 '예측된 결과'와 일치하게 (승리 예상인데 1-1 표시 방지)
+        region = _argmax_region(outcome)
+        x, y, sp = most_likely_scoreline_for(matrix, region)
+
+        # 실제 최근 맞대결 감지 (이미 치러진 경기) — 실시간성 보강
+        recent_meeting = _recent_meeting(td_a, b)
 
         scorers_a = rank_scorers(lam_a, td_a.squad, cfg=self.cfg)
         scorers_b = rank_scorers(lam_b, td_b.squad, cfg=self.cfg)
@@ -129,6 +161,7 @@ class PredictionService:
                 scorers_a=scorers_a, scorers_b=scorers_b,
                 squad_a=td_a.squad, squad_b=td_b.squad,
                 context={"a": td_a.context, "b": td_b.context},
+                elo_a=td_a.elo, elo_b=td_b.elo, recent_meeting=recent_meeting,
             )
         )
 
@@ -148,6 +181,7 @@ class PredictionService:
                          "b": td_b.context.get("form", [])},
                 "injuries": {"a": td_a.context.get("injuries", []),
                              "b": td_b.context.get("injuries", [])},
+                "recent_meeting": recent_meeting,
                 "warnings": warn_a + warn_b,
             },
         )

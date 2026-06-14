@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from dataclasses import dataclass
 
+from ..core.aliases import TEAMS
 from ..core.models import PartialTeamData, PlayerStat, ResolvedTeam
 from .base import DataProvider
 from .cache import DiskCache
@@ -21,6 +23,10 @@ _POS_MAP = {"GK": "Goalkeeper", "DF": "Defence", "MF": "Midfield", "FW": "Offenc
 # 스쿼드 선수 템플릿 변형: {{nat fs player}}, {{nat fs g player}}(포지션 그룹형)
 _PLAYER_TEMPLATES = ("nat fs g player", "nat fs player")
 _SCORE_RE = re.compile(r"(\d+)\s*[–—-]\s*(\d+)")
+# Football box 의 팀은 {{fb|KOR}}, {{fb-rt|CZE}} 처럼 FIFA 3글자 코드로 표기됨
+_FB_RE = re.compile(r"\{\{\s*fb[\w-]*\s*\|\s*([A-Za-z]{2,3})\b", re.IGNORECASE)
+# fb 코드(=우리 표준키) → 한국어 표시명
+_KEY_TO_DISPLAY = {t.key: t.display for t in TEAMS}
 _TITLE_SUFFIXES = (
     " national football team",
     " men's national soccer team",
@@ -120,29 +126,61 @@ def _find_templates(text: str, name: str) -> list[str]:
     return blocks
 
 
-def parse_recent_form(wikitext: str, token: str, limit: int = 5) -> list[str]:
-    """Football box 결과에서 토큰 팀의 최근 폼(가장 최근 우선) ['L 1-3 vs Spain', ...]."""
-    forms: list[str] = []
+@dataclass(frozen=True)
+class FormResult:
+    """경기 결과 (대상 팀 관점). opponent 는 fb 코드(예: 'CZE') 또는 평문."""
+
+    result: str  # W/D/L
+    gf: int
+    ga: int
+    opponent: str
+
+
+def _team_label(raw: str) -> str:
+    """Football box 팀 표기 → fb 코드(대문자) 또는 평문 텍스트."""
+    m = _FB_RE.search(raw)
+    if m:
+        return m.group(1).upper()
+    return _strip_markup(raw)
+
+
+def parse_recent_form(
+    wikitext: str, subject_key: str, subject_token: str = "", limit: int = 5
+) -> list[FormResult]:
+    """Football box 결과에서 대상 팀(fb 코드=subject_key 또는 토큰)의 최근 폼.
+
+    가장 최근 경기가 앞에 온다. 스코어 없는(미래) 경기는 제외.
+    """
+    out: list[FormResult] = []
+    sk = subject_key.upper()
+    st = subject_token.lower()
+
+    def is_subject(label: str) -> bool:
+        return label.upper() == sk or (bool(st) and st in label.lower())
+
     for block in _find_templates(wikitext, "Football box collapsible") + _find_templates(
         wikitext, "Football box"
     ):
         m = _SCORE_RE.search(_param(block, "score"))
         if not m:
             continue
-        t1 = _strip_markup(_param(block, "team1"))
-        t2 = _strip_markup(_param(block, "team2"))
+        l1 = _team_label(_param(block, "team1"))
+        l2 = _team_label(_param(block, "team2"))
         g1, g2 = int(m.group(1)), int(m.group(2))
-        tl = token.lower()
-        if tl in t1.lower():
-            gf, ga, opp = g1, g2, t2
-        elif tl in t2.lower():
-            gf, ga, opp = g2, g1, t1
+        if is_subject(l1):
+            gf, ga, opp = g1, g2, l2
+        elif is_subject(l2):
+            gf, ga, opp = g2, g1, l1
         else:
             continue
         res = "W" if gf > ga else ("D" if gf == ga else "L")
-        forms.append(f"{res} {gf}-{ga} vs {opp}")
-    # 문서상 보통 시간 오름차순 → 뒤쪽이 최근. 최근 N 을 최신순으로.
-    return forms[-limit:][::-1]
+        out.append(FormResult(res, gf, ga, opp))
+    return out[-limit:][::-1]
+
+
+def _format_form(r: FormResult) -> str:
+    opp = _KEY_TO_DISPLAY.get(r.opponent.upper(), r.opponent)
+    return f"{r.result} {r.gf}-{r.ga} vs {opp}"
 
 
 def _default_fetch_wikitext(title: str) -> str:
@@ -191,8 +229,15 @@ class WikipediaProvider(DataProvider):
             )
         except Exception:
             return PartialTeamData(source=self.name)
-        form = parse_recent_form(text, team_token(team.wikipedia))
-        context = {"form": form} if form else {}
+        results = parse_recent_form(text, team.key, team_token(team.wikipedia))
+        context: dict = {}
+        if results:
+            context["form"] = [_format_form(r) for r in results]
+            # 구조화 형태(상대=fb코드)로도 보관 → 오케스트레이터의 실제 맞대결 감지용
+            context["form_results"] = [
+                {"opp": r.opponent.upper(), "gf": r.gf, "ga": r.ga, "result": r.result}
+                for r in results
+            ]
         return PartialTeamData(
             source=self.name, squad=parse_squad_from_wikitext(text), context=context
         )

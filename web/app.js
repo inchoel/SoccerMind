@@ -98,6 +98,15 @@ function renderMatch(d) {
   const elo = d.meta.elo || {};
   const lam = d.meta.lambda || {};
   const augLabel = AUG_LABELS[d.meta.augmenter] || d.meta.augmenter || "-";
+
+  // 실제 최근 맞대결 (이미 치러진 경기)
+  const rm = d.meta.recent_meeting;
+  const recentHtml = rm
+    ? `<div class="recent-meeting">📌 실제 최근 맞대결: <strong>${esc(rm.text)}</strong>${
+        rm.winner ? ` — ${esc(rm.winner)} 승` : " — 무승부"
+      }</div>`
+    : "";
+
   const sourcesHtml = `
     <details class="sources" open>
       <summary>📊 참조 데이터</summary>
@@ -112,8 +121,9 @@ function renderMatch(d) {
 
   resultEl.innerHTML = `
     <div class="winner-line">${winnerLine}</div>
+    ${recentHtml}
     <div class="scoreline"><span class="pa">${d.scoreline.a}</span> : <span class="pb">${d.scoreline.b}</span></div>
-    <div class="score-prob">${esc(a)} ${d.scoreline.a} - ${d.scoreline.b} ${esc(b)} · 최빈 스코어 (${pct(d.scoreline.prob)})</div>
+    <div class="score-prob">${esc(a)} ${d.scoreline.a} - ${d.scoreline.b} ${esc(b)} · 예상 스코어 (이 스코어가 나올 확률 ${pct(d.scoreline.prob)})</div>
     <div class="wdl-bar">
       <div class="seg seg-a" style="width:${d.wdl.a_win * 100}%">${pct(d.wdl.a_win)}</div>
       <div class="seg seg-d" style="width:${d.wdl.draw * 100}%">${pct(d.wdl.draw)}</div>

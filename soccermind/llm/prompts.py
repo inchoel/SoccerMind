@@ -43,6 +43,8 @@ def build_input_payload(inp) -> dict:
     return {
         "team_a": inp.team_a.display,
         "team_b": inp.team_b.display,
+        "elo": {"a": round(inp.elo_a, 1), "b": round(inp.elo_b, 1)},
+        "recent_meeting": inp.recent_meeting,
         "lambda": {"a": round(inp.lam_a, 3), "b": round(inp.lam_b, 3)},
         "wdl": {
             "a_win": round(inp.outcome.a_win, 3),

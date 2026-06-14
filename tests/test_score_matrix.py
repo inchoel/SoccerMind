@@ -5,6 +5,7 @@ import math
 from soccermind.engine.config import DEFAULT_CONFIG
 from soccermind.engine.score_matrix import (
     most_likely_scoreline,
+    most_likely_scoreline_for,
     outcome_probabilities,
     score_matrix,
     top_scorelines,
@@ -63,6 +64,16 @@ def test_most_likely_scoreline_returns_valid_cell():
     assert 0 <= x <= DEFAULT_CONFIG.max_goals
     assert 0 <= y <= DEFAULT_CONFIG.max_goals
     assert p == max(cell for row in m for cell in row)
+
+
+def test_most_likely_scoreline_for_region():
+    m = score_matrix(1.9, 1.0)  # A 우세
+    xa, ya, _ = most_likely_scoreline_for(m, "a")
+    assert xa > ya  # A승 영역
+    xd, yd, _ = most_likely_scoreline_for(m, "draw")
+    assert xd == yd  # 무승부 영역
+    xb, yb, _ = most_likely_scoreline_for(m, "b")
+    assert xb < yb  # B승 영역
 
 
 def test_top_scorelines_sorted_and_sized():

@@ -122,21 +122,32 @@ def test_team_token():
 
 
 def test_parse_recent_form_orders_recent_first():
-    form = parse_recent_form(FORM_WIKITEXT, "South Korea")
+    form = parse_recent_form(FORM_WIKITEXT, "KOR", "South Korea")
     assert len(form) == 3
-    # 문서 마지막(최신)이 맨 앞
-    assert form[0] == "L 1-3 vs Spain"
-    assert form[1] == "D 0-0 vs Brazil"
-    assert form[2] == "W 2-1 vs Japan"  # 상대 플래그아이콘 제거됨
+    # 문서 마지막(최신)이 맨 앞, FormResult 구조
+    assert (form[0].result, form[0].gf, form[0].ga, form[0].opponent) == ("L", 1, 3, "Spain")
+    assert (form[1].result, form[1].opponent) == ("D", "Brazil")
+    assert (form[2].result, form[2].opponent) == ("W", "Japan")  # 상대 플래그아이콘 제거됨
 
 
 def test_parse_recent_form_respects_limit():
-    form = parse_recent_form(FORM_WIKITEXT, "South Korea", limit=2)
-    assert form == ["L 1-3 vs Spain", "D 0-0 vs Brazil"]
+    form = parse_recent_form(FORM_WIKITEXT, "KOR", "South Korea", limit=2)
+    assert [f.opponent for f in form] == ["Spain", "Brazil"]
 
 
 def test_parse_recent_form_none_for_unknown_team():
-    assert parse_recent_form(FORM_WIKITEXT, "Argentina") == []
+    assert parse_recent_form(FORM_WIKITEXT, "ARG", "Argentina") == []
+
+
+def test_parse_recent_form_fb_codes():
+    # 실제 문서 형식: 팀을 {{fb|CODE}} / {{fb-rt|CODE}} 로 표기
+    wt = """
+    {{Football box collapsible|date=12 June 2026|team1={{fb-rt|KOR}}|score=2–1|team2={{fb|CZE}}}}
+    {{Football box collapsible|date=20 January 2027|team1={{fb-rt|KOR}}|score=|team2={{fb|UAE}}}}
+    """
+    form = parse_recent_form(wt, "KOR", "South Korea")
+    assert len(form) == 1  # 스코어 없는 미래 경기는 제외
+    assert (form[0].result, form[0].gf, form[0].ga, form[0].opponent) == ("W", 2, 1, "CZE")
 
 
 def test_provider_populates_form_context(tmp_path):
@@ -161,6 +172,29 @@ def test_form_surfaced_in_prediction_meta(tmp_path):
     svc = PredictionService(providers=[FakeElo(), wiki])
     pred = svc.predict("대한민국", "일본")
     assert pred.meta["form"]["a"][0] == "L 1-3 vs Spain"
+
+
+def test_recent_meeting_detected(tmp_path):
+    # 이미 치러진 맞대결(한국 2-1 체코)을 감지해 meta.recent_meeting 에 노출
+    wt = "{{Football box collapsible|date=12 June 2026|team1={{fb-rt|KOR}}|score=2–1|team2={{fb|CZE}}}}"
+
+    class FakeElo(DataProvider):
+        name = "elo"
+
+        def available(self):
+            return True
+
+        def fetch(self, team: ResolvedTeam):
+            return PartialTeamData(source="elo", elo={"KR": 1786.0,
+                                                      "CZ": 1712.0}.get(team.elo_name))
+
+    wiki = WikipediaProvider(fetch_wikitext=lambda t: wt, cache=DiskCache(tmp_path))
+    svc = PredictionService(providers=[FakeElo(), wiki])
+    pred = svc.predict("대한민국", "체코")
+    rm = pred.meta["recent_meeting"]
+    assert rm is not None
+    assert rm["a_goals"] == 2 and rm["b_goals"] == 1
+    assert rm["winner"] == "대한민국"
 
 
 def test_covers_team_without_source_ids(tmp_path):

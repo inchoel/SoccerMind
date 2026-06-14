@@ -90,6 +90,29 @@ def most_likely_scoreline(matrix: list[list[float]]) -> tuple[int, int, float]:
     return best_x, best_y, best_p
 
 
+def most_likely_scoreline_for(
+    matrix: list[list[float]], region: str
+) -> tuple[int, int, float]:
+    """예측 결과(region)와 '일치하는' 가장 가능성 높은 스코어.
+
+    region: 'a'(A승, x>y) / 'draw'(무, x=y) / 'b'(B승, x<y).
+    승리 예상인데 1-1(무) 이 표시되는 모순을 막기 위해, 헤드라인 스코어를
+    예측된 결과 영역 안에서 고른다.
+    """
+    best_x = best_y = 0
+    best_p = -1.0
+    for x, row in enumerate(matrix):
+        for y, p in enumerate(row):
+            in_region = (
+                (region == "a" and x > y)
+                or (region == "draw" and x == y)
+                or (region == "b" and x < y)
+            )
+            if in_region and p > best_p:
+                best_p, best_x, best_y = p, x, y
+    return best_x, best_y, best_p
+
+
 def top_scorelines(matrix: list[list[float]], n: int = 5) -> list[tuple[int, int, float]]:
     """확률 상위 N개 스코어라인 [(A골, B골, 확률), ...]."""
     cells = [

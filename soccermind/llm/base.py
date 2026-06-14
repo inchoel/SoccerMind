@@ -27,6 +27,9 @@ class AugmentInput:
     squad_a: list[PlayerStat] = field(default_factory=list)
     squad_b: list[PlayerStat] = field(default_factory=list)
     context: dict = field(default_factory=dict)
+    elo_a: float = 0.0
+    elo_b: float = 0.0
+    recent_meeting: dict | None = None
 
 
 @dataclass
