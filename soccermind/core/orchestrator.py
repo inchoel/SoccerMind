@@ -34,6 +34,13 @@ from .name_resolver import NameResolver
 DEFAULT_RATING = 1500.0  # Elo 미상 팀의 중립 기본값 (meta 에 경고 기록)
 
 
+def _search_name(team: "ResolvedTeam") -> str:
+    """웹검색용 영문 팀명 (Wikipedia 제목에서 추출, 없으면 표시명)."""
+    from ..data.wikipedia import team_token
+
+    return team_token(team.wikipedia) if team.wikipedia else team.display
+
+
 def _argmax_region(o: Outcome) -> str:
     """예측 결과 영역: 'a'(A승) / 'draw'(무) / 'b'(B승)."""
     best = max(o.a_win, o.draw, o.b_win)
@@ -73,6 +80,7 @@ class ResolutionError(Exception):
 @dataclass
 class PredictOptions:
     host_key: str | None = None  # 개최국 표준키 (있으면 홈 어드밴티지)
+    want_previews: bool = False  # 고객 선택: 실제 웹검색 전문가 프리뷰 표시
 
 
 class PredictionService:
@@ -82,11 +90,13 @@ class PredictionService:
         resolver: NameResolver | None = None,
         augmenter: Augmenter | None = None,
         cfg: ModelConfig = DEFAULT_CONFIG,
+        preview_searcher=None,
     ) -> None:
         self.providers = providers
         self.resolver = resolver or NameResolver()
         self.augmenter = augmenter
         self.cfg = cfg
+        self.preview_searcher = preview_searcher  # 고객 옵트인 시 전문가 프리뷰 검색
         self._fallback = FallbackAugmenter()
 
     def _resolve(self, raw: str) -> ResolvedTeam:
@@ -149,6 +159,11 @@ class PredictionService:
         # 실제 최근 맞대결 감지 (이미 치러진 경기) — 실시간성 보강
         recent_meeting = _recent_meeting(td_a, b)
 
+        # 전문가 프리뷰 (고객이 want_previews 로 선택했을 때만 실제 웹검색)
+        previews: list[dict] = []
+        if opts.want_previews and self.preview_searcher is not None:
+            previews = self.preview_searcher.search(_search_name(a), _search_name(b))
+
         scorers_a = rank_scorers(lam_a, td_a.squad, cfg=self.cfg)
         scorers_b = rank_scorers(lam_b, td_b.squad, cfg=self.cfg)
 
@@ -187,6 +202,7 @@ class PredictionService:
                 "injuries": {"a": td_a.context.get("injuries", []),
                              "b": td_b.context.get("injuries", [])},
                 "recent_meeting": recent_meeting,
+                "previews": previews,
                 "warnings": warn_a + warn_b,
             },
         )

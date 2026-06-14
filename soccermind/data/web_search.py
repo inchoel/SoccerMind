@@ -21,6 +21,7 @@ DDG_URL = "https://html.duckduckgo.com/html/"
 _TTL = 3600  # 속보는 1h (변동 빠름)
 
 _SNIPPET_RE = re.compile(r"result__snippet[^>]*>(.*?)</a>", re.IGNORECASE | re.DOTALL)
+_SRCURL_RE = re.compile(r'class="result__url"[^>]*>(.*?)</a>', re.IGNORECASE | re.DOTALL)
 
 # 부상/결장 신호 키워드 (영/한)
 INJURY_KEYWORDS = (
@@ -55,13 +56,55 @@ def extract_injury_notes(snippets: list[str], limit: int = 3) -> list[str]:
     return notes
 
 
-def _default_search(query: str) -> list[str]:
+def _clean(raw: str) -> str:
+    return htmllib.unescape(re.sub(r"<[^>]+>", "", raw)).strip()
+
+
+def parse_match_previews(html_text: str, limit: int = 3) -> list[dict]:
+    """DDG HTML → [{text, source}] 프리뷰 (출처 도메인 포함, 순서 매칭)."""
+    snippets = parse_ddg_results(html_text)
+    sources = [_clean(s) for s in _SRCURL_RE.findall(html_text)]
+    out: list[dict] = []
+    for i, sn in enumerate(snippets[:limit]):
+        out.append({"text": sn[:240], "source": sources[i] if i < len(sources) else "웹검색"})
+    return out
+
+
+def _default_fetch_html(query: str) -> str:
     import httpx
 
     headers = {"User-Agent": "Mozilla/5.0 (SoccerMind/0.1; open-source)"}
     resp = httpx.get(DDG_URL, params={"q": query}, headers=headers, timeout=15.0)
     resp.raise_for_status()
-    return parse_ddg_results(resp.text)
+    return resp.text
+
+
+def _default_search(query: str) -> list[str]:
+    return parse_ddg_results(_default_fetch_html(query))
+
+
+class MatchPreviewSearcher:
+    """두 팀 경기 프리뷰/분석을 웹검색으로 가져온다 (출처 표기). 고객 옵트인 시에만 호출."""
+
+    name = "match_preview"
+
+    def __init__(
+        self,
+        fetch_html: Callable[[str], str] = _default_fetch_html,
+        cache: DiskCache | None = None,
+    ) -> None:
+        self._fetch_html = fetch_html
+        self._cache = cache or DiskCache()
+
+    def search(self, team_a: str, team_b: str, limit: int = 3) -> list[dict]:
+        query = f"{team_a} vs {team_b} match preview prediction analysis"
+        try:
+            html = self._cache.get_or_fetch(
+                f"preview:{query}", _TTL, lambda: self._fetch_html(query)
+            )
+        except Exception:
+            return []
+        return parse_match_previews(html, limit)
 
 
 class WebSearchProvider(DataProvider):

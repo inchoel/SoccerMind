@@ -30,10 +30,11 @@ def predict(
     team_a: str = Query(..., description="첫 번째 국가명 (한/영)"),
     team_b: str = Query(..., description="두 번째 국가명 (한/영)"),
     host: str | None = Query(None, description="개최국 표준키 (선택, 예: BRA)"),
+    previews: bool = Query(False, description="전문가 프리뷰(웹검색) 표시 — 고객 선택"),
     svc: PredictionService = Depends(get_service),
 ) -> PredictionResponse:
     try:
-        pred = svc.predict(team_a, team_b, PredictOptions(host_key=host))
+        pred = svc.predict(team_a, team_b, PredictOptions(host_key=host, want_previews=previews))
     except ResolutionError as e:
         raise HTTPException(
             status_code=400,

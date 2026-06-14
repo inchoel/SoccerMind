@@ -124,6 +124,14 @@ function renderMatch(d) {
     listSec("리스크", "⚠️", an.risks, "a-risk") +
     listSec("관전 포인트", "👀", an.watch_points, "a-watch");
 
+  // 전문가 프리뷰 (실제 웹검색 결과 — 출처 표기)
+  const previews = d.meta.previews || [];
+  const previewsHtml = previews.length
+    ? `<div class="previews"><h4>📰 전문가 프리뷰 <span class="dim">(웹검색)</span></h4>${previews
+        .map((p) => `<div class="preview-item">${esc(p.text)}<span class="preview-src">— ${esc(p.source || "웹검색")}</span></div>`)
+        .join("")}</div>`
+    : "";
+
   const sourcesHtml = `
     <details class="sources" open>
       <summary>📊 참조 데이터</summary>
@@ -156,6 +164,7 @@ function renderMatch(d) {
     ${injHtml}
     <div class="explanation">${esc(d.explanation)}</div>
     ${analysisHtml}
+    ${previewsHtml}
     ${sourcesHtml}
     ${warnHtml ? `<div class="meta">${warnHtml}</div>` : ""}
   `;
@@ -170,7 +179,9 @@ matchForm.addEventListener("submit", async (e) => {
   statusEl.hidden = true; resultEl.hidden = true;
   submitBtn.disabled = true; submitBtn.textContent = "예측 중…";
   try {
-    const res = await fetch(`/api/predict?team_a=${encodeURIComponent(a)}&team_b=${encodeURIComponent(b)}`);
+    const wantPreviews = document.getElementById("opt-previews").checked;
+    const url = `/api/predict?team_a=${encodeURIComponent(a)}&team_b=${encodeURIComponent(b)}${wantPreviews ? "&previews=1" : ""}`;
+    const res = await fetch(url);
     const data = await res.json();
     if (!res.ok) { setStatus(statusEl, describeError(data)); return; }
     renderMatch(data);

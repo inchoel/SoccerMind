@@ -7,7 +7,7 @@ from ..data.api_football import ApiFootballProvider
 from ..data.cache import DiskCache
 from ..data.elo_provider import EloProvider
 from ..data.football_data import FootballDataProvider
-from ..data.web_search import WebSearchProvider
+from ..data.web_search import MatchPreviewSearcher, WebSearchProvider
 from ..data.wikipedia import WikipediaProvider
 from ..engine.config import CONFIG_PATH, load_config
 from ..llm.augmenter import ClaudeAugmenter
@@ -43,4 +43,9 @@ def build_service(
         WebSearchProvider(cache=cache),  # ENABLE_WEB_SEARCH 옵트인 — 부상/결장 속보
     ]
     augmenter = ClaudeAugmenter()  # ANTHROPIC_API_KEY 있으면 활성
-    return PredictionService(providers=providers, augmenter=augmenter, cfg=cfg)
+    # 전문가 프리뷰 검색기 — 고객이 요청(previews=1)할 때만 실제 호출
+    preview_searcher = MatchPreviewSearcher(cache=cache)
+    return PredictionService(
+        providers=providers, augmenter=augmenter, cfg=cfg,
+        preview_searcher=preview_searcher,
+    )

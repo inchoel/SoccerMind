@@ -70,6 +70,30 @@ def test_scoreline_consistent_with_winner():
     assert pred.scoreline[0] > pred.scoreline[1]  # 헤드라인 스코어도 A 우세
 
 
+def test_previews_only_when_opted_in():
+    class FakePreview:
+        def __init__(self):
+            self.calls = []
+
+        def search(self, a, b, limit=3):
+            self.calls.append((a, b))
+            return [{"text": "프리뷰 내용", "source": "bbc.com"}]
+
+    elo = FakeEloProvider({"BR": 2024.0, "KR": 1745.0})
+    pv = FakePreview()
+    svc = PredictionService(providers=[elo], preview_searcher=pv)
+
+    # 옵트인 안 함 → 검색 호출 없음, previews 비어 있음
+    pred = svc.predict("브라질", "대한민국")
+    assert pred.meta["previews"] == []
+    assert pv.calls == []
+
+    # 옵트인 → 영문명으로 검색, previews 채워짐
+    pred2 = svc.predict("브라질", "대한민국", PredictOptions(want_previews=True))
+    assert pred2.meta["previews"][0]["source"] == "bbc.com"
+    assert pv.calls == [("Brazil", "South Korea")]
+
+
 def test_meta_includes_analysis_sections():
     svc = _service()
     pred = svc.predict("브라질", "대한민국")

@@ -54,6 +54,16 @@ textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
 .team-inputs input:focus { outline: 2px solid var(--accent); border-color: transparent; }
 .vs { font-weight: 700; color: var(--accent-2); }
 
+.opt-check { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.9rem; color: var(--muted); font-size: 0.86rem; cursor: pointer; }
+.opt-check .opt-note { color: #5d6b7d; }
+
+.previews { margin-top: 1rem; padding: 0.7rem 0.95rem; border-radius: 8px; background: #0f1622; border-left: 3px solid var(--accent-2); }
+.previews h4 { margin: 0 0 0.5rem; font-size: 0.92rem; }
+.previews .dim { color: #5d6b7d; font-weight: 400; }
+.preview-item { font-size: 0.84rem; color: var(--text); line-height: 1.6; padding: 0.35rem 0; border-top: 1px solid #1c2735; }
+.preview-item:first-of-type { border-top: none; }
+.preview-src { display: block; color: var(--accent); font-size: 0.76rem; margin-top: 0.15rem; }
+
 #submit-btn {
   margin-top: 1rem; width: 100%; padding: 0.9rem; font-size: 1.05rem; font-weight: 700;
   border: none; border-radius: 10px; cursor: pointer;
